@@ -1,0 +1,38 @@
+options:
+  bad_address_path: data/bad_addresses.csv
+  db_path: db/sample.db
+  export_tables: false
+  export_tables_path: data/
+  force_db_create: false
+  link_exclusions:
+  update_config_only: false
+schemas:
+- schema_name: schema1
+  tables:
+  - address_cols:
+    - address
+    id_col: file_num1
+    name_cols:
+    - name_raw
+    table_name: table1
+    table_name_path: data/schema1_table1.parquet
+  - address_cols:
+    - address2
+    id_col: file_num2
+    name_cols:
+    - name2
+    table_name: table2
+    table_name_path: data/schema1_table2.parquet
+- schema_name: schema2
+  tables:
+  - address_cols:
+    - mailing_address
+    - property_address
+    id_col: pin
+    name_cols:
+    - tax_payer_name
+    table_name: table1
+    table_name_path: data/schema2_table1.parquet
+metadata:
+  existing_links:
+  last_updated:
