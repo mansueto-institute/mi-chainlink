@@ -1,74 +1,39 @@
-# linkage
+## Linkage
 
-[![Release](https://img.shields.io/github/v/release/asteinhart/linkage)](https://img.shields.io/github/v/release/asteinhart/linkage)
-[![Build status](https://img.shields.io/github/actions/workflow/status/asteinhart/linkage/main.yml?branch=main)](https://github.com/asteinhart/linkage/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/asteinhart/linkage/branch/main/graph/badge.svg)](https://codecov.io/gh/asteinhart/linkage)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/asteinhart/linkage)](https://img.shields.io/github/commit-activity/m/asteinhart/linkage)
-[![License](https://img.shields.io/github/license/asteinhart/linkage)](https://img.shields.io/github/license/asteinhart/linkage)
+A record linkage tool for matching records between multiple datasets built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/jamesturk), [Ana (Anita) Restrepo Lachman](https://github.com/johnketchum), [Caitlin P.](https://github.com/johnketchum), [Joaquin Pinto](https://github.com/johnketchum), and [Divij Sinha](https://github.com/johnketchum).
 
-A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques.
+Source: https://github.com/mansueto-institute/linkage
 
-- **Github repository**: <https://github.com/asteinhart/linkage/>
-- **Documentation** <https://asteinhart.github.io/linkage/>
+Documentation: TK
 
-## Getting started with your project
+Issues: https://github.com/mansueto-institute/linkage/issues
 
-### 1. Create a New Repository
+## Installation
 
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
+First [install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
 
 ```bash
-git init -b main
-git add .
-git commit -m "init commit"
-git remote add origin git@github.com:asteinhart/linkage.git
-git push -u origin main
+uv sync
 ```
 
-### 2. Set Up Your Development Environment
+## Overview
 
-Then, install the environment and the pre-commit hooks with
+A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques. The system supports matching on both name and address fields, with multiple matching strategies including raw string matching, standardized street matching, unit-level matching when streets align, and fuzzy name matching using TF-IDF similarity scores. The tool is built with a generic loading interface that can handle various input formats (CSV, Parquet) and data schemas, making it adaptable for different record linkage scenarios while maintaining data in a DuckDB database for efficient processing. The matching process automatically handles edge cases like duplicate matches, self-matches within datasets, and provides configurable thresholds for fuzzy matching, while also supporting the ability to exclude specific match types through configuration.
+
+#### Input
+
+Use the config file to specify the input data, including the data source, id, name and address columns and additional settings.
+
+#### Output
+
+The output of the matching process is a database with the following schema:
+
+- `entity.names`: A table containing the matches between the datasets.
+- `entity.name_similarity`: A table containing the similarity scores between the matches.
+-
+
+## Example Usage
 
 ```bash
-make install
+python generic_load_link/main.py --config generic_load_link/configs/config_template.yaml
 ```
-
-This will also generate your `uv.lock` file
-
-### 3. Run the pre-commit hooks
-
-Initially, the CI/CD pipeline might be failing due to formatting issues. To resolve those run:
-
-```bash
-uv run pre-commit run -a
-```
-
-### 4. Commit the changes
-
-Lastly, commit the changes made by the two steps above to your repository.
-
-```bash
-git add .
-git commit -m 'Fix formatting issues'
-git push origin main
-```
-
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
-
-To finalize the set-up for publishing to PyPI, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/codecov/).
-
-## Releasing a new version
-
-- Create an API Token on [PyPI](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/asteinhart/linkage/settings/secrets/actions/new).
-- Create a [new release](https://github.com/asteinhart/linkage/releases/new) on Github.
-- Create a new tag in the form `*.*.*`.
-
-For more details, see [here](https://fpgmaas.github.io/cookiecutter-uv/features/cicd/#how-to-trigger-a-release).
-
----
-
-Repository initiated with [fpgmaas/cookiecutter-uv](https://github.com/fpgmaas/cookiecutter-uv).
