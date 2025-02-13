@@ -1,9 +1,10 @@
-*.db
-*.parquet
-*.csv
-*.yaml
+**/*.db
+**/*.parquet
+**/*.csv
+**/*.yaml
+**/*.ipynb
 !config_template.yaml
-*.ipynb
+
 
 docs/source
 
