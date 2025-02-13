@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Any, Dict
+from typing import Any, dict
 
 import duckdb
 import jsonschema
@@ -36,7 +36,7 @@ def load_config(file_path: str) -> dict:
     return config
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(config: dict[str, Any]) -> None:
     """
     Validates the configuration against a schema
     """
@@ -190,7 +190,4 @@ def check_table_exists(db_conn: DuckDBPyConnection, schema: str, table_name: str
                 AND    table_schema = '{schema}'"""
     )
 
-    if db_conn.fetchone()[0] == 1:
-        return True
-
-    return False
+    return db_conn.fetchone()[0] == 1:
