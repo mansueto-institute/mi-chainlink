@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Any, dict
+from typing import Any, Dict
 
 import duckdb
 import jsonschema
@@ -9,7 +9,7 @@ import yaml
 from duckdb import DuckDBPyConnection
 
 
-def load_config(file_path: str) -> dict:
+def load_config(file_path: str) -> Dict[str, Any]:
     """
     load yaml config file, clean up column names
 
@@ -24,11 +24,21 @@ def load_config(file_path: str) -> dict:
     # create snake case columns
     for schema in config["schemas"]:
         for table in schema["tables"]:
-            table["name_cols_og"] = table["name_cols"]
-            table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
+            if table["name_cols"] is not None:
+                table["name_cols_og"] = table["name_cols"]
+                table["name_cols"] = [
+                    x.lower().replace(" ", "_") for x in table["name_cols"]
+                ]
+            else:
+                table["name_cols"] = []
 
-            table["address_cols_og"] = table["address_cols"]
-            table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
+            if table["address_cols"] is not None:
+                table["address_cols_og"] = table["address_cols"]
+                table["address_cols"] = [
+                    x.lower().replace(" ", "_") for x in table["address_cols"]
+                ]
+            else:
+                table["address_cols"] = []
 
             table["id_col_og"] = table["id_col"]
             table["id_col"] = table["id_col"].lower().replace(" ", "_")
@@ -36,7 +46,7 @@ def load_config(file_path: str) -> dict:
     return config
 
 
-def validate_config(config: dict[str, Any]) -> None:
+def validate_config(config: Dict[str, Any]) -> None:
     """
     Validates the configuration against a schema
     """
@@ -52,8 +62,8 @@ def validate_config(config: dict[str, Any]) -> None:
                     "force_db_create": {"type": "boolean"},
                     "export_tables": {"type": "boolean"},
                     "update_config_only": {"type": "boolean"},
-                    "link_exclusions": {"type": "array"},
-                    "bad_address_path": {"type": "string"},
+                    "link_exclusions": {"type": ["array", "null"]},  # or none
+                    "bad_address_path": {"type": "string"},  # or none
                     "export_tables_path": {"type": "string"},
                 },
             },
@@ -74,11 +84,11 @@ def validate_config(config: dict[str, Any]) -> None:
                                     "table_name_path": {"type": "string"},
                                     "id_col": {"type": "string"},
                                     "name_cols": {
-                                        "type": "array",
+                                        "type": ["array", "null"],
                                         "items": {"type": "string"},
                                     },
                                     "address_cols": {
-                                        "type": "array",
+                                        "type": ["array", "null"],
                                         "items": {"type": "string"},
                                     },
                                 },
@@ -112,7 +122,9 @@ def update_config(db_path: str, config: dict) -> None:
         all_links += [col for col in cols if "match" in col]
 
     config["metadata"]["existing_links"] = all_links
-    config["metadata"]["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    config["metadata"]["last_updated"] = datetime.datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
 
     with open("configs/config.yaml", "w+") as f:
         yaml.dump(config, f)
@@ -140,10 +152,14 @@ def export_tables(db_path: str, data_path: str) -> None:
     with duckdb.connect(db_path) as conn:
         df_db_columns = conn.sql("show all tables").df()
 
-        df_db_columns["schema_table"] = df_db_columns["schema"] + "." + df_db_columns["name"]
+        df_db_columns["schema_table"] = (
+            df_db_columns["schema"] + "." + df_db_columns["name"]
+        )
         df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
 
-        link_filter = (df_db_columns["schema"] == "link") | (df_db_columns["name"] == "name_similarity")
+        link_filter = (df_db_columns["schema"] == "link") | (
+            df_db_columns["name"] == "name_similarity"
+        )
 
         links_to_export = zip(
             df_db_columns[link_filter]["schema_table"].tolist(),
@@ -155,11 +171,16 @@ def export_tables(db_path: str, data_path: str) -> None:
                 (select * from {link[0]}
                 order by {link[1][0]} ASC, {link[1][1]} ASC);
             """
-            print(links_query)
-            d = conn.execute(links_query).pl().cast({link[1][0]: pl.String, link[1][1]: pl.String})
+            d = (
+                conn.execute(links_query)
+                .pl()
+                .cast({link[1][0]: pl.String, link[1][1]: pl.String})
+            )
             d.write_parquet(f"{data_path}/export/{link[0].replace('.', '_')}.parquet")
 
-        main_filter = (df_db_columns["schema"] != "link") & (df_db_columns["name"] != "name_similarity")
+        main_filter = (df_db_columns["schema"] != "link") & (
+            df_db_columns["name"] != "name_similarity"
+        )
         main_to_export = zip(
             df_db_columns[main_filter]["schema_table"].tolist(),
             df_db_columns[main_filter]["id_col"].tolist(),
@@ -176,7 +197,9 @@ def export_tables(db_path: str, data_path: str) -> None:
     print("Exported all tables!")
 
 
-def check_table_exists(db_conn: DuckDBPyConnection, schema: str, table_name: str) -> bool:
+def check_table_exists(
+    db_conn: DuckDBPyConnection, schema: str, table_name: str
+) -> bool:
     """
     check if a table exists
 
@@ -190,4 +213,4 @@ def check_table_exists(db_conn: DuckDBPyConnection, schema: str, table_name: str
                 AND    table_schema = '{schema}'"""
     )
 
-    return db_conn.fetchone()[0] == 1:
+    return db_conn.fetchone()[0] == 1

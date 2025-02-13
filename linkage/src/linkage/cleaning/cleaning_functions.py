@@ -4,19 +4,14 @@ import us
 import usaddress
 from scourgify import normalize_address_record
 from uszipcode import SearchEngine
-from woc.create_db.generic_load_link.cleaning.patterns import (
+from cleaning.patterns import (
     abb_patterns as ABB_PATTERNS,
-)
-from woc.create_db.generic_load_link.cleaning.patterns import (
     end_of_line_patterns as EOL_PATTERNS,
-)
-from woc.create_db.generic_load_link.cleaning.patterns import (
     excluded_patterns as EXCLUDED_PATTERNS,
-)
-from woc.create_db.generic_load_link.cleaning.patterns import (
     word_patterns as WORD_PATTERNS,
 )
-from woc.create_db.generic_load_link.cleaning.usps_suffixes import suffixes
+
+from cleaning.usps_suffixes import suffixes
 
 engine = SearchEngine()
 zip_cache = {}
@@ -152,7 +147,9 @@ def clean_address(raw: str) -> dict:
 
     try:
         normalized = normalize_address_record(to_normalize)
-        normalized = " ".join(value for value in normalized.values() if value is not None)
+        normalized = " ".join(
+            value for value in normalized.values() if value is not None
+        )
 
     except Exception:
         normalized = to_normalize
@@ -222,9 +219,13 @@ def clean_address(raw: str) -> dict:
         "street_name",
         "street_post_type",
     ]
-    record["street"] = " ".join([
-        record[field] for field in street_fields if (record[field] is not None) and (record[field] != "")
-    ])
+    record["street"] = " ".join(
+        [
+            record[field]
+            for field in street_fields
+            if (record[field] is not None) and (record[field] != "")
+        ]
+    )
     if (record["street"] == "") or (record["street"] == " "):
         record["street"] = None
 
@@ -276,7 +277,9 @@ def clean_names(raw: str, data_source="") -> str:
 
     name = raw.upper()
 
-    name = name.replace("&", "AND").replace("-", " ").replace("@", "AT").replace("—", " ")
+    name = (
+        name.replace("&", "AND").replace("-", " ").replace("@", "AT").replace("—", " ")
+    )
 
     name = re.sub(r"[^a-zA-Z0-9\s]", "", name)
     name = re.sub(r"\s{2,}", " ", name)

@@ -1,6 +1,6 @@
 import itertools
 
-from link_utils import (
+from link.link_utils import (
     execute_fuzzy_link,
     execute_match,
     execute_match_address,
@@ -8,7 +8,9 @@ from link_utils import (
 )
 
 
-def create_within_links(db_path: str, schema_config: dict, link_exclusions: list) -> None:
+def create_within_links(
+    db_path: str, schema_config: dict, link_exclusions: list
+) -> None:
     """
     Creates exact string matches on name and address fields for entity and
     entity.
@@ -34,56 +36,73 @@ def create_within_links(db_path: str, schema_config: dict, link_exclusions: list
     for table_config in schema_config["tables"]:
         table = table_config["table_name"]
 
-        # generate name matches combos
-        name_combos = list(itertools.combinations_with_replacement(table_config["name_cols"], 2))
-
-        for left_name, right_name in name_combos:
-            execute_match(
-                db_path=db_path,
-                match_type="name_match",
-                left_entity=entity,
-                left_table=table,
-                left_matching_col=left_name,
-                left_matching_id=f"{left_name}_name_id",
-                left_ent_id=table_config["id_col"],
-                right_entity=entity,
-                right_table=table,
-                right_matching_col=right_name,
-                right_ent_id=table_config["id_col"],
-                right_matching_id=f"{right_name}_name_id",
-                link_exclusions=link_exclusions,
+        if table_config.get("name_cols"):
+            # generate name matches combos
+            name_combos = list(
+                itertools.combinations_with_replacement(table_config["name_cols"], 2)
             )
 
-        # address within
-        address_combos = list(itertools.combinations_with_replacement(table_config["address_cols"], 2))
+            for left_name, right_name in name_combos:
+                execute_match(
+                    db_path=db_path,
+                    match_type="name_match",
+                    left_entity=entity,
+                    left_table=table,
+                    left_matching_col=left_name,
+                    left_matching_id=f"{left_name}_name_id",
+                    left_ent_id=table_config["id_col"],
+                    right_entity=entity,
+                    right_table=table,
+                    right_matching_col=right_name,
+                    right_ent_id=table_config["id_col"],
+                    right_matching_id=f"{right_name}_name_id",
+                    link_exclusions=link_exclusions,
+                )
 
-        for left_address, right_address in address_combos:
-            execute_match_address(
-                db_path=db_path,
-                left_entity=entity,
-                left_table=table,
-                left_address=left_address,
-                left_ent_id=table_config["id_col"],
-                right_entity=entity,
-                right_table=table,
-                right_address=right_address,
-                right_ent_id=table_config["id_col"],
-                skip_address=True,
-                link_exclusions=link_exclusions,
+        if table_config.get("address_cols"):
+            # address within
+            address_combos = list(
+                itertools.combinations_with_replacement(table_config["address_cols"], 2)
             )
+
+            for left_address, right_address in address_combos:
+                execute_match_address(
+                    db_path=db_path,
+                    left_entity=entity,
+                    left_table=table,
+                    left_address=left_address,
+                    left_ent_id=table_config["id_col"],
+                    right_entity=entity,
+                    right_table=table,
+                    right_address=right_address,
+                    right_ent_id=table_config["id_col"],
+                    skip_address=True,
+                    link_exclusions=link_exclusions,
+                )
 
         # for across tables
-        within_entity_across_tables_names.append([
-            (name, table, table_config["id_col"]) for name in table_config["name_cols"]
-        ])
-        within_entity_across_tables_addresses.append([
-            (address, table, table_config["id_col"]) for address in table_config["address_cols"]
-        ])
+        if table_config.get("name_cols"):
+            within_entity_across_tables_names.append(
+                [
+                    (name, table, table_config["id_col"])
+                    for name in table_config["name_cols"]
+                ]
+            )
+        if table_config.get("address_cols"):
+            within_entity_across_tables_addresses.append(
+                [
+                    (address, table, table_config["id_col"])
+                    for address in table_config["address_cols"]
+                ]
+            )
 
     # generate combos across tables
-    across_name_combos, across_address_combos = generate_combos_within_across_tables(
-        within_entity_across_tables_names, within_entity_across_tables_addresses
-    )
+    if within_entity_across_tables_names or within_entity_across_tables_addresses:
+        across_name_combos, across_address_combos = (
+            generate_combos_within_across_tables(
+                within_entity_across_tables_names, within_entity_across_tables_addresses
+            )
+        )
 
     # across files for name
     for left, right in across_name_combos:
@@ -126,7 +145,9 @@ def create_within_links(db_path: str, schema_config: dict, link_exclusions: list
         )
 
 
-def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list) -> None:
+def create_across_links(
+    db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list
+) -> None:
     """
     For each entity in the existing_db list, create links between the new entity
     and the existing entity.
@@ -152,7 +173,9 @@ def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, l
         for name_col in table["name_cols"]:
             new_entity_names.append((table["table_name"], table["id_col"], name_col))
         for address_col in table["address_cols"]:
-            new_entity_addresses.append((table["table_name"], table["id_col"], address_col))
+            new_entity_addresses.append(
+                (table["table_name"], table["id_col"], address_col)
+            )
 
     # create name and address matches for each existing entity and new entity
     existing_entity = existing_schema["schema_name"]
@@ -163,17 +186,21 @@ def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, l
     # gather all the name and address columns for this existing entity
     for table in existing_schema["tables"]:
         for name_col in table["name_cols"]:
-            existing_entity_names.append((
-                table["table_name"],
-                table["id_col"],
-                name_col,
-            ))
+            existing_entity_names.append(
+                (
+                    table["table_name"],
+                    table["id_col"],
+                    name_col,
+                )
+            )
         for address_col in table["address_cols"]:
-            existing_entity_addresses.append((
-                table["table_name"],
-                table["id_col"],
-                address_col,
-            ))
+            existing_entity_addresses.append(
+                (
+                    table["table_name"],
+                    table["id_col"],
+                    address_col,
+                )
+            )
     # generate name match combos
     name_combos = list(itertools.product(new_entity_names, existing_entity_names))
 
@@ -200,7 +227,9 @@ def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, l
         )
 
     # generate address match combos
-    address_combos = list(itertools.product(new_entity_addresses, existing_entity_addresses))
+    address_combos = list(
+        itertools.product(new_entity_addresses, existing_entity_addresses)
+    )
 
     for new, old in address_combos:
         left_table, left_ent_id, left_address = new
@@ -221,7 +250,9 @@ def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, l
         )
 
 
-def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions: list) -> None:
+def create_tfidf_within_links(
+    db_path: str, schema_config: dict, link_exclusions: list
+) -> None:
     """
     create tfidf links within entity
 
@@ -235,7 +266,9 @@ def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions
 
     for table in schema_config["tables"]:
         # generate name matches combos
-        name_combos = list(itertools.combinations_with_replacement(table["name_cols"], 2))
+        name_combos = list(
+            itertools.combinations_with_replacement(table["name_cols"], 2)
+        )
 
         for left_name, right_name in name_combos:
             execute_fuzzy_link(
@@ -253,12 +286,17 @@ def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions
             )
 
         # for across tables within entity
-        within_entity_across_tables_names.append([
-            (name, table["table_name"], table["id_col"]) for name in table["name_cols"]
-        ])
+        within_entity_across_tables_names.append(
+            [
+                (name, table["table_name"], table["id_col"])
+                for name in table["name_cols"]
+            ]
+        )
 
     # generate combos, across tables within entity
-    across_name_combos = generate_combos_within_across_tables(within_entity_across_tables_names)
+    across_name_combos, _ = generate_combos_within_across_tables(
+        within_entity_across_tables_names
+    )
 
     for left, right in across_name_combos:
         left_name, left_table, left_ent_id = left
@@ -279,7 +317,9 @@ def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions
         )
 
 
-def create_tfidf_across_links(db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list) -> None:
+def create_tfidf_across_links(
+    db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list
+) -> None:
     """
     create all fuzzy links across new entity and existing entity
 
@@ -303,11 +343,13 @@ def create_tfidf_across_links(db_path: str, new_schema: dict, existing_schema: d
     # gather all the name and address columns for this existing entity
     for table in existing_schema["tables"]:
         for name_col in table["name_cols"]:
-            existing_entity_names.append((
-                table["table_name"],
-                table["id_col"],
-                name_col,
-            ))
+            existing_entity_names.append(
+                (
+                    table["table_name"],
+                    table["id_col"],
+                    name_col,
+                )
+            )
     # generate name match combos
 
     name_combos = list(itertools.product(new_entity_names, existing_entity_names))

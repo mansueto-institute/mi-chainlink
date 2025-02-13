@@ -23,13 +23,9 @@ def superfast_tfidf(entity_list: pd.DataFrame) -> list:
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names)
     t2 = time.time()
-    matches = ct.sp_matmul_topn(
-        tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1
-    )
+    matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
     t3 = time.time()
-    matches_df = get_matches_df(
-        sparse_matrix=matches, name_vector=company_names, id_vector=id_vector
-    )
+    matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names, id_vector=id_vector)
     t4 = time.time()
     matches_df = clean_matches(matches_df)
     t5 = time.time()
@@ -43,9 +39,7 @@ def superfast_tfidf(entity_list: pd.DataFrame) -> list:
     return matches_df
 
 
-def get_matches_df(
-    sparse_matrix: pd.DataFrame, name_vector: list, id_vector: list, top=None
-) -> pd.DataFrame:
+def get_matches_df(sparse_matrix: pd.DataFrame, name_vector: list, id_vector: list, top=None) -> pd.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -97,16 +91,12 @@ def clean_matches(matches_df: pd.DataFrame) -> pd.DataFrame:
     matches_df = matches_df[matches_df["id_a"] != matches_df["id_b"]]
 
     # remove duplicate matches where (A, B) and (B, A) are considered the same
-    matches_df["sorted_pair"] = matches_df.apply(
-        lambda row: tuple(sorted([row["id_a"], row["id_b"]])), axis=1
-    )
+    matches_df["sorted_pair"] = matches_df.apply(lambda row: tuple(sorted([row["id_a"], row["id_b"]])), axis=1)
 
     duplicates = matches_df.duplicated(subset="sorted_pair")
     matches_df = matches_df[~duplicates].reset_index(drop=True)
     matches_df = matches_df.drop(columns=["sorted_pair"])
-    matches_df = matches_df.sort_values(by="similarity", ascending=False).reset_index(
-        drop=True
-    )
+    matches_df = matches_df.sort_values(by="similarity", ascending=False).reset_index(drop=True)
 
     return matches_df
 
@@ -130,53 +120,41 @@ blank_words = {
 
 # replace with shortened versions
 ngram_adj = {
-    frozenset(
-        {
-            "DEVELOPMENT",
-            "DEVELOPMENTS",
-            "DVLPMNT",
-            "DEVLPMNT",
-            "DEVELOPMEN",
-            "DEVELOPMNT",
-        }
-    ): "DEV",
+    frozenset({
+        "DEVELOPMENT",
+        "DEVELOPMENTS",
+        "DVLPMNT",
+        "DEVLPMNT",
+        "DEVELOPMEN",
+        "DEVELOPMNT",
+    }): "DEV",
     frozenset({"ESTATE", "ESTATES", "ESATE", "ESTAT"}): "EST",
     frozenset({"HOUSING", "HOUSNG", "HOUSIN", "HOUISING", "HOUISNG"}): "HSNG",
-    frozenset(
-        {
-            "MANAGEMENT",
-            "MANAGEMEN",
-            "MANAGMENT",
-            "MANGAMENT",
-            "MANGAEMENT",
-            "MANAG",
-            "MGMNT",
-            "MNGMT",
-        }
-    ): "MGMT",
-    frozenset(
-        {
-            "PROPERTY",
-            "PROPERTIES",
-            "PROPRETY",
-            "PROPRETIES",
-            "PROPERT",
-            "PROPERTI",
-            "PROPERTIE",
-            "PROPS",
-        }
-    ): "PROP",
-    frozenset(
-        {"REALTY", "REALTIES", "RELATY", "RELATIES", "REALT", "REALTEIS", "RE", "REL"}
-    ): "RLTY",
+    frozenset({
+        "MANAGEMENT",
+        "MANAGEMEN",
+        "MANAGMENT",
+        "MANGAMENT",
+        "MANGAEMENT",
+        "MANAG",
+        "MGMNT",
+        "MNGMT",
+    }): "MGMT",
+    frozenset({
+        "PROPERTY",
+        "PROPERTIES",
+        "PROPRETY",
+        "PROPRETIES",
+        "PROPERT",
+        "PROPERTI",
+        "PROPERTIE",
+        "PROPS",
+    }): "PROP",
+    frozenset({"REALTY", "REALTIES", "RELATY", "RELATIES", "REALT", "REALTEIS", "RE", "REL"}): "RLTY",
 }
 
 # Flatten ngram_adj for easier replacement
-flat_ngram_adj = {
-    word: replacement
-    for synonyms, replacement in ngram_adj.items()
-    for word in synonyms
-}
+flat_ngram_adj = {word: replacement for synonyms, replacement in ngram_adj.items() for word in synonyms}
 
 
 def adjust_and_replace(string: str) -> str:
@@ -191,12 +169,7 @@ def adjust_and_replace(string: str) -> str:
     parts = string.split()
 
     # replace words based on blank_words and flat_ngram_adj using list comprehension
-    adjusted_string = "".join(
-        [
-            "" if part in blank_words else flat_ngram_adj.get(part, part)
-            for part in parts
-        ]
-    )
+    adjusted_string = "".join(["" if part in blank_words else flat_ngram_adj.get(part, part) for part in parts])
 
     return adjusted_string.strip()
 

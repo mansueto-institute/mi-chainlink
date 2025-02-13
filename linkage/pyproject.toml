@@ -24,9 +24,14 @@ dependencies = [
     "numpy>=2.0.2",
     "pandas>=2.2.3",
     "polars>=1.22.0",
+    "pyarrow>=19.0.0",
+    "python-levenshtein>=0.26.1",
+    "scikit-learn>=1.6.1",
     "sparse-dot-topn>=1.1.5",
+    "sqlalchemy-mate<=2.0.0.0",
     "us>=3.2.0",
     "usaddress>=0.5.11",
+    "usaddress-scourgify>=0.6.0",
     "uszipcode>=1.0.1",
 ]
 

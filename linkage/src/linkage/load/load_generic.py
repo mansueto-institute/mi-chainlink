@@ -3,7 +3,7 @@ import os
 
 import duckdb
 import pandas as pd
-from load_utils import (
+from load.load_utils import (
     clean_generic,
     execute_flag_bad_addresses,
     load_to_db,
@@ -32,19 +32,28 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
             print(f"Data: {table_config['table_name']} -- Reading data")
             file_path = table_config.get("table_name_path")
             if not file_path:
-                raise ValueError(f"No file path provided for table: {table_config['table_name']}")
+                raise ValueError(
+                    f"No file path provided for table: {table_config['table_name']}"
+                )
 
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Data file not found: {file_path}")
 
             file_extension = file_path.split(".")[-1].lower()
             if file_extension not in ["csv", "parquet"]:
-                raise ValueError(f"Unsupported file format: {file_extension}. Supported formats: csv, parquet")
+                raise ValueError(
+                    f"Unsupported file format: {file_extension}. Supported formats: csv, parquet"
+                )
 
             try:
-                df = pd.read_csv(file_path, dtype="string") if file_extension == "csv" else pd.read_parquet(file_path)
-                if file_extension == "csv":
-                    df = df.astype("string")
+                df = (
+                    pd.read_csv(file_path, dtype="string")
+                    if file_extension == "csv"
+                    else pd.read_parquet(file_path)
+                )
+                # convert all columns to string
+                df = df.astype("string")
+
             except Exception as e:
                 raise Exception(f"Error reading file {file_path}: {e!s}")
 
@@ -58,9 +67,9 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
 
             all_columns = []
             all_columns.append(table_config["id_col_og"])
-            for col in table_config["name_cols_og"]:
+            for col in table_config.get("name_cols_og", ""):
                 all_columns.append(col)
-            for col in table_config["address_cols_og"]:
+            for col in table_config.get("address_cols_og", ""):
                 all_columns.append(col)
 
             # check if columns exist and remove from config if not
@@ -68,13 +77,16 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
             for col in all_columns:
                 if col not in df.columns:
                     if col in table_config["name_cols_og"]:
-                        print(col)
                         table_config["name_cols_og"].remove(col)
                         table_config["name_cols"].remove(col.lower().replace(" ", "_"))
                     elif col in table_config["address_cols_og"]:
                         table_config["address_cols_og"].remove(col)
-                        table_config["address_cols"].remove(col.lower().replace(" ", "_"))
-                    print(f"Column {col} not found in file {file_path}. Removing from config")
+                        table_config["address_cols"].remove(
+                            col.lower().replace(" ", "_")
+                        )
+                    print(
+                        f"Column {col} not found in file {file_path}. Removing from config"
+                    )
 
             # Make headers snake case
             df.columns = [x.lower() for x in df.columns]
@@ -106,20 +118,24 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
 
             id_cols = []
             for col in df.columns:
-                if any(c in col for c in all_id_cols) and "subaddress_identifier" not in col:
+                if (
+                    any(c in col for c in all_id_cols)
+                    and "subaddress_identifier" not in col
+                ):
                     id_cols.append(col)
 
             for col in id_cols:
                 update_entity_ids(df=df, entity_id_col=col, db_conn=conn)
 
             # create bad address flag
-            for col in table_config["address_cols"]:
-                execute_flag_bad_addresses(
-                    db_conn=conn,
-                    table=f"{schema_name}.{table_name}",
-                    address_col=col,
-                    bad_addresses=bad_addresses,
-                )
+            if table_config.get("address_cols"):
+                for col in table_config["address_cols"]:
+                    execute_flag_bad_addresses(
+                        db_conn=conn,
+                        table=f"{schema_name}.{table_name}",
+                        address_col=col,
+                        bad_addresses=bad_addresses,
+                    )
 
 
 if __name__ == "__main__":

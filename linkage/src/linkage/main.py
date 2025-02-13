@@ -4,15 +4,15 @@ import duckdb
 import fire
 import pandas as pd
 import yaml
-from generic_load_link.link.link_generic import (
+from link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from generic_load_link.link.link_utils import generate_tfidf_links
-from generic_load_link.load.load_generic import load_generic
-from generic_load_link.utils import (
+from link.link_utils import generate_tfidf_links
+from load.load_generic import load_generic
+from utils import (
     export_tables,
     load_config,
     update_config,
@@ -61,7 +61,9 @@ def main(config_path: str) -> bool:
 
     # list of link exclusions
 
-    link_exclusions = config["options"].get("link_exclusions", [])
+    link_exclusions = config["options"]["link_exclusions"]
+    if not link_exclusions:
+        link_exclusions = []
 
     # all columns in db to compare against
     with duckdb.connect(database=db_path, read_only=False) as con:
@@ -81,7 +83,8 @@ def main(config_path: str) -> bool:
                 try:
                     db_columns = (
                         df_db_columns[
-                            (df_db_columns["schema"] == schema_name) & (df_db_columns["name"] == table["table_name"])
+                            (df_db_columns["schema"] == schema_name)
+                            & (df_db_columns["name"] == table["table_name"])
                         ]["column_names"]
                         .values[0]
                         .tolist()
@@ -102,7 +105,9 @@ def main(config_path: str) -> bool:
 
     # load in all new schemas
     for new_schema in new_schemas:
-        schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
+        schema_config = [
+            schema for schema in schemas if schema["schema_name"] == new_schema
+        ][0]
 
         # load schema
         load_generic(
@@ -129,7 +134,9 @@ def main(config_path: str) -> bool:
 
     # create tfidf links within each new schema
     for new_schema in new_schemas:
-        schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
+        schema_config = [
+            schema for schema in schemas if schema["schema_name"] == new_schema
+        ][0]
 
         create_tfidf_within_links(
             db_path=db_path,
@@ -138,9 +145,13 @@ def main(config_path: str) -> bool:
         )
 
         # also create across links for each new schema
-        existing_schemas = [schema for schema in schemas if schema["schema_name"] != new_schema]
+        existing_schemas = [
+            schema for schema in schemas if schema["schema_name"] != new_schema
+        ]
 
-        new_schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
+        new_schema_config = [
+            schema for schema in schemas if schema["schema_name"] == new_schema
+        ][0]
 
         # make sure we havent already created this link combo
         for schema in existing_schemas:

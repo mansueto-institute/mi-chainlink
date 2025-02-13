@@ -2,7 +2,7 @@ import itertools
 
 import duckdb
 from duckdb import DuckDBPyConnection
-from tfidf_utils import database_query, superfast_tfidf
+from link.tfidf_utils import database_query, superfast_tfidf
 
 
 def execute_match(
@@ -57,7 +57,7 @@ def execute_match(
         match_name_col = f"{right_side}_{left_side}_{match_type}"
 
     # check link exclusion
-    if any([exclusion in match_name_col for exclusion in link_exclusions]):
+    if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
     temp_table = match_name_col + "_table"
@@ -667,4 +667,4 @@ def generate_combos_within_across_tables(
         return across_name_combos, across_address_combos
 
     else:
-        return across_name_combos
+        return across_name_combos, []

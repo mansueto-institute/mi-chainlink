@@ -1,38 +1,38 @@
 options:
   bad_address_path: data/bad_addresses.csv # path to a csv file with bad addresses that should not be matched
   db_path: db/sample.db # path to the output database file
-  export_tables: false # bool whether to export the tables to csv files
-  export_tables_path: data/export/ # path to the directory to export the tables
-  force_db_create: false # whether to force overwrite the existing database or add to existing tables
+  export_tables: true # bool whether to export the tables to csv files
+  export_tables_path: data/ # path to the directory to export the tables
+  force_db_create: true # whether to force overwrite the existing database or add to existing tables
   link_exclusions: # can specify exclusions for the matching process
   update_config_only: false # whether to update the config only
 schemas:
-  - schema_name: schema1 # name of the schema
+  - schema_name: corp # name of the schema
     tables:
       - address_cols:
-          - address # address column
-        id_col: file_num1 # id column
+        id_col: file_num # id column
         name_cols:
           - name_raw # name column
-        table_name: table1 # name of the table
-        table_name_path: data/import/schema1_table1.parquet # path to the table
-      - address_cols:
-          - address2 # address column
-        id_col: file_num2 # id column
-        name_cols:
-          - name2 # name column
-        table_name: table2 # name of the table
-        table_name_path: data/schema1_table2.parquet # path to the table
-  - schema_name: schema2 # name of the schema
+        table_name: corp_master # name of the table
+        table_name_path: data/import/corp_small.parquet # path to the table
+  - schema_name: llc # name of the schema
     tables:
       - address_cols:
-          - mailing_address # address column
-          - property_address # address column
-        id_col: pin # id column
+        - address
+        id_col: file_num # id column
         name_cols:
-          - tax_payer_name # name column
-        table_name: table1 # name of the table
-        table_name_path: data/schema2_table1.parquet # path to the table
+          - name_raw # name column
+        table_name: llc_master # name of the table
+        table_name_path: data/import/llc_small.parquet # path to the table
+  - schema_name: parcel # name of the schema
+    tables:
+      - address_cols:
+          - Property Address # address column
+        id_col: PIN # id column
+        name_cols:
+            - Tax Payer Name_raw # name column
+        table_name: parcel_master # name of the table
+        table_name_path: data/import/parcel_small.parquet # path to the table
 metadata:
   existing_links:
   last_updated: # date of the last update

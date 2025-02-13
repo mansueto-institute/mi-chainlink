@@ -1,11 +1,11 @@
 import pandas as pd
 from duckdb import DuckDBPyConnection
-from generic_load_link.cleaning.cleaning_functions import (
+from cleaning.cleaning_functions import (
     clean_address,
     clean_names,
     clean_zipcode,
 )
-from generic_load_link.utils import check_table_exists
+from utils import check_table_exists
 
 
 def load_to_db(df: pd.DataFrame, table_name: str, db_conn, schema: str) -> None:
@@ -66,16 +66,19 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
         df.drop(columns=[id_col_name], inplace=True)
     # Clean the address
-    for col in config["address_cols"]:
-        # lower snake case
-        col = col.lower().replace(" ", "_")
+    if config.get("address_cols"):
+        for col in config["address_cols"]:
+            # lower snake case
+            col = col.lower().replace(" ", "_")
 
         raw_address = col + "_raw"
         temp_address = "temp_" + col
 
         df[raw_address] = df[col]
 
-        df.loc[:, temp_address] = df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
+        df.loc[:, temp_address] = (
+            df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
+        )
         df.reset_index(drop=True, inplace=True)
 
         df = pd.merge(
@@ -86,7 +89,9 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         )
 
         # clean zipcode
-        df.loc[:, f"{col}_postal_code"] = df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
+        df.loc[:, f"{col}_postal_code"] = (
+            df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
+        )
 
         # create col for address id
         df[col + "_address"] = df[raw_address]
@@ -174,7 +179,9 @@ def update_entity_ids(df: pd.DataFrame, entity_id_col: str, db_conn) -> None:
     return None
 
 
-def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list) -> None:
+def execute_flag_bad_addresses(
+    db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list
+) -> None:
     """
     Flags rows with bad addresses as provided by user
     """
@@ -200,10 +207,11 @@ def validate_input_data(df: pd.DataFrame, table_config: dict) -> None:
     Validates input data against configuration requirements
     """
     required_columns = set()
-    if table_config.get("id_col"):
-        required_columns.add(table_config["id_col"])
-    required_columns.update(table_config.get("name_cols", []))
-    required_columns.update(table_config.get("address_cols", []))
+    required_columns.add(table_config["id_col_og"])
+    if table_config.get("name_cols_og"):
+        required_columns.update(table_config["name_cols_og"])
+    if table_config.get("address_cols_og"):
+        required_columns.update(table_config["address_cols_og"])
 
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
