@@ -9,6 +9,7 @@ Documentation: TK
 Issues: https://github.com/mansueto-institute/linkage/issues
 
 ## Installation
+
 First [install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
 
 ```bash
@@ -21,7 +22,7 @@ A flexible record linkage framework that enables matching between multiple datas
 
 #### Input
 
-Use the config file to specify the input data, including the data source, id, name and address columns and additional settings. 
+Use the config file to specify the input data, including the data source, id, name and address columns and additional settings.
 
 #### Output
 
@@ -29,12 +30,10 @@ The output of the matching process is a database with the following schema:
 
 - `entity.names`: A table containing the matches between the datasets.
 - `entity.name_similarity`: A table containing the similarity scores between the matches.
-- 
-
+-
 
 ## Example Usage
 
 ```bash
 python generic_load_link/main.py --config generic_load_link/configs/config_template.yaml
 ```
-
