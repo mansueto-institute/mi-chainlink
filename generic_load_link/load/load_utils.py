@@ -1,12 +1,12 @@
 import pandas as pd
 from duckdb import DuckDBPyConnection
 
-from woc.create_db.generic_load_link.cleaning.cleaning_functions import (
+from generic_load_link.cleaning.cleaning_functions import (
     clean_address,
     clean_names,
     clean_zipcode,
 )
-from woc.create_db.generic_load_link.utils import check_table_exists
+from generic_load_link.utils import check_table_exists
 
 
 def load_to_db(df: pd.DataFrame, table_name: str, db_conn, schema: str) -> None:
@@ -200,3 +200,28 @@ def execute_flag_bad_addresses(
     db_conn.execute(query)
 
     return None
+
+
+def validate_input_data(df: pd.DataFrame, table_config: dict) -> None:
+    """
+    Validates input data against configuration requirements
+    """
+    required_columns = set()
+    if table_config.get("id_col"):
+        required_columns.add(table_config["id_col"])
+    required_columns.update(table_config.get("name_cols", []))
+    required_columns.update(table_config.get("address_cols", []))
+
+    missing_columns = required_columns - set(df.columns)
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+
+    # Check for empty dataframe
+    if df.empty:
+        raise ValueError("Input data is empty")
+
+    # Check for minimum required non-null values
+    for col in required_columns:
+        null_count = df[col].isnull().sum()
+        if null_count == len(df):
+            raise ValueError(f"Column {col} contains all null values")

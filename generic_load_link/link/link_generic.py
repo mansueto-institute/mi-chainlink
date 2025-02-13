@@ -1,6 +1,6 @@
 import itertools
 
-from woc.create_db.generic_load_link.link_utils import (
+from link_utils import (
     execute_match,
     execute_match_address,
     execute_fuzzy_link,

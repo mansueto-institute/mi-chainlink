@@ -2,16 +2,18 @@ import pandas as pd
 import duckdb
 import datetime
 import numpy as np
+import os
 
 from load_utils import (
     load_to_db,
     clean_generic,
     update_entity_ids,
-    execute_flag_bad_addresses
+    execute_flag_bad_addresses,
+    validate_input_data,
 )
 
 
-def load_generic(db_path:str, schema_config: dict, bad_addresses:list) -> None:
+def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None:
     """
     Loads a generic file into the database.
 
@@ -31,18 +33,31 @@ def load_generic(db_path:str, schema_config: dict, bad_addresses:list) -> None:
             print(f"Data: {table_config['table_name']} -- Reading data")
             file_path = table_config.get("table_name_path")
             if not file_path:
-                print(f"Data: {table_config['table_name']} -- No file path given")
-                return False
-
-            if file_path.split(".")[-1] == "csv":
-                df = pd.read_csv(file_path, dtype='string')
-            elif file_path.split(".")[-1] == "parquet":
-                df = pd.read_parquet(file_path)
-                df = df.astype('string')
-            else:
-                raise TypeError(
-                    f"File type not supported: {file_path.split(".")[-1]}"
+                raise ValueError(
+                    f"No file path provided for table: {table_config['table_name']}"
                 )
+
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Data file not found: {file_path}")
+
+            file_extension = file_path.split(".")[-1].lower()
+            if file_extension not in ["csv", "parquet"]:
+                raise ValueError(
+                    f"Unsupported file format: {file_extension}. Supported formats: csv, parquet"
+                )
+
+            try:
+                df = (
+                    pd.read_csv(file_path, dtype="string")
+                    if file_extension == "csv"
+                    else pd.read_parquet(file_path)
+                )
+                if file_extension == "csv":
+                    df = df.astype("string")
+            except Exception as e:
+                raise Exception(f"Error reading file {file_path}: {str(e)}")
+
+            validate_input_data(df, table_config)
 
             # Clean the data and create ids
             print(
@@ -50,7 +65,6 @@ def load_generic(db_path:str, schema_config: dict, bad_addresses:list) -> None:
                 {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
             )
 
-      
             all_columns = []
             all_columns.append(table_config["id_col_og"])
             for col in table_config["name_cols_og"]:
@@ -58,8 +72,8 @@ def load_generic(db_path:str, schema_config: dict, bad_addresses:list) -> None:
             for col in table_config["address_cols_og"]:
                 all_columns.append(col)
 
-            #check if columns exist and remove from config if not
-        
+            # check if columns exist and remove from config if not
+
             for col in all_columns:
                 if col not in df.columns:
                     if col in table_config["name_cols_og"]:
@@ -68,16 +82,18 @@ def load_generic(db_path:str, schema_config: dict, bad_addresses:list) -> None:
                         table_config["name_cols"].remove(col.lower().replace(" ", "_"))
                     elif col in table_config["address_cols_og"]:
                         table_config["address_cols_og"].remove(col)
-                        table_config["address_cols"].remove(col.lower().replace(" ", "_"))
-                    print(f"Column {col} not found in file {file_path}. Removing from config")
-
+                        table_config["address_cols"].remove(
+                            col.lower().replace(" ", "_")
+                        )
+                    print(
+                        f"Column {col} not found in file {file_path}. Removing from config"
+                    )
 
             # Make headers snake case
             df.columns = [x.lower() for x in df.columns]
             df.columns = df.columns.str.replace(" ", "_", regex=True)
 
             df = clean_generic(df, table_config)
-
 
             # load the data to db
             print(

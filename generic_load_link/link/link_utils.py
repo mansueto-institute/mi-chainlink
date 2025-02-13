@@ -2,7 +2,7 @@ import itertools
 import duckdb
 from duckdb import DuckDBPyConnection
 
-from woc.create_db.generic_load_link.tfidf_utils import superfast_tfidf, database_query
+from tfidf_utils import superfast_tfidf, database_query
 
 
 def execute_match(

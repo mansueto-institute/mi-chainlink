@@ -1,19 +1,23 @@
 import duckdb
 import pandas as pd
+import fire
+import os
+import yaml
 
-from woc.create_db.generic_load_link.load_generic import load_generic
-from woc.create_db.generic_load_link.link_generic import (
+
+from generic_load_link.load.load_generic import load_generic
+from generic_load_link.link.link_generic import (
     create_within_links,
     create_across_links,
     create_tfidf_within_links,
     create_tfidf_across_links,
 )
-from woc.create_db.generic_load_link.utils import (
+from generic_load_link.utils import (
     update_config,
     export_tables,
     load_config,
 )
-from woc.create_db.generic_load_link.link_utils import generate_tfidf_links
+from generic_load_link.link.link_utils import generate_tfidf_links
 
 
 def main(config_path: str) -> bool:
@@ -27,7 +31,15 @@ def main(config_path: str) -> bool:
     Returns true if the database was created successfully.
     """
 
-    config = load_config(config_path)
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found at: {config_path}")
+
+    try:
+        config = load_config(config_path)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML configuration file: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error loading configuration: {str(e)}")
 
     # handle options
     force_db_create = config["options"]["force_db_create"]
@@ -64,7 +76,6 @@ def main(config_path: str) -> bool:
         schema_name = schema_config["schema_name"]
 
         # if not force create, check if each col exists, and skip if so
-
         if not force_db_create:
 
             for table in schema_config["tables"]:
@@ -174,3 +185,12 @@ def main(config_path: str) -> bool:
         export_tables(db_path, path)
 
     return True
+
+
+if __name__ == "__main__":
+
+    def run(config_path: str = "configs/config_template.yaml"):
+        main(config_path=config_path)
+        print("Done")
+
+    fire.Fire(run)

@@ -4,6 +4,8 @@ import duckdb
 from duckdb import DuckDBPyConnection
 import datetime
 import polars as pl
+from typing import Dict, Any
+import jsonschema
 
 
 def load_config(file_path: str) -> dict:
@@ -15,6 +17,8 @@ def load_config(file_path: str) -> dict:
 
     with open(file_path, "r") as file:
         config = yaml.safe_load(file)
+
+    validate_config(config)
 
     # create snake case columns
     for schema in config["schemas"]:
@@ -33,6 +37,78 @@ def load_config(file_path: str) -> dict:
             table["id_col"] = table["id_col"].lower().replace(" ", "_")
 
     return config
+
+
+def validate_config(config: Dict[str, Any]) -> None:
+    """
+    Validates the configuration against a schema
+    """
+    schema = {
+        "type": "object",
+        "required": ["options", "schemas"],
+        "properties": {
+            "options": {
+                "type": "object",
+                "required": [],  # db_path only required if update_config_only is False
+                "properties": {
+                    "db_path": {"type": "string"},
+                    "force_db_create": {"type": "boolean"},
+                    "export_tables": {"type": "boolean"},
+                    "update_config_only": {"type": "boolean"},
+                    "link_exclusions": {"type": "array", "items": {"type": "string"}},
+                    "bad_address_path": {"type": "string"},
+                    "export_tables_path": {"type": "string"},
+                },
+                "dependencies": {
+                    "export_tables": {
+                        "properties": {"export_tables_path": {"type": "string"}},
+                        "required": ["export_tables_path"],
+                    }
+                },
+            },
+            "schemas": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["schema_name", "tables"],
+                    "properties": {
+                        "schema_name": {"type": "string"},
+                        "tables": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["table_name", "table_name_path", "id_col"],
+                                "properties": {
+                                    "table_name": {"type": "string"},
+                                    "table_name_path": {"type": "string"},
+                                    "id_col": {"type": "string"},
+                                    "name_cols": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "minItems": 1,
+                                    },
+                                    "address_cols": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "minItems": 1,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    try:
+        # Add conditional validation for db_path requirement
+        if not config.get("options", {}).get("update_config_only", False):
+            schema["properties"]["options"]["required"].append("db_path")
+
+        jsonschema.validate(instance=config, schema=schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise ValueError(f"Invalid configuration: {str(e)}")
 
 
 def update_config(db_path: str, config: dict) -> None:
