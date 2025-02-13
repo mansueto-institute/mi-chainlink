@@ -76,9 +76,7 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
         df[raw_address] = df[col]
 
-        df.loc[:, temp_address] = (
-            df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
-        )
+        df.loc[:, temp_address] = df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
         df.reset_index(drop=True, inplace=True)
 
         df = pd.merge(
@@ -89,9 +87,7 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         )
 
         # clean zipcode
-        df.loc[:, f"{col}_postal_code"] = (
-            df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
-        )
+        df.loc[:, f"{col}_postal_code"] = df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
 
         # create col for address id
         df[col + "_address"] = df[raw_address]
@@ -179,9 +175,7 @@ def update_entity_ids(df: pd.DataFrame, entity_id_col: str, db_conn) -> None:
     return None
 
 
-def execute_flag_bad_addresses(
-    db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list
-) -> None:
+def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list) -> None:
     """
     Flags rows with bad addresses as provided by user
     """

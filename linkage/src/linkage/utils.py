@@ -1,6 +1,5 @@
 import datetime
 import os
-from typing import Any, Dict
 
 import duckdb
 import jsonschema
@@ -9,7 +8,7 @@ import yaml
 from duckdb import DuckDBPyConnection
 
 
-def load_config(file_path: str) -> Dict[str, Any]:
+def load_config(file_path: str) -> dict:
     """
     load yaml config file, clean up column names
 
@@ -26,17 +25,13 @@ def load_config(file_path: str) -> Dict[str, Any]:
         for table in schema["tables"]:
             if table["name_cols"] is not None:
                 table["name_cols_og"] = table["name_cols"]
-                table["name_cols"] = [
-                    x.lower().replace(" ", "_") for x in table["name_cols"]
-                ]
+                table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
             else:
                 table["name_cols"] = []
 
             if table["address_cols"] is not None:
                 table["address_cols_og"] = table["address_cols"]
-                table["address_cols"] = [
-                    x.lower().replace(" ", "_") for x in table["address_cols"]
-                ]
+                table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
             else:
                 table["address_cols"] = []
 
@@ -46,7 +41,7 @@ def load_config(file_path: str) -> Dict[str, Any]:
     return config
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(config: dict) -> None:
     """
     Validates the configuration against a schema
     """
@@ -122,9 +117,7 @@ def update_config(db_path: str, config: dict) -> None:
         all_links += [col for col in cols if "match" in col]
 
     config["metadata"]["existing_links"] = all_links
-    config["metadata"]["last_updated"] = datetime.datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    config["metadata"]["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     with open("configs/config.yaml", "w+") as f:
         yaml.dump(config, f)
@@ -152,14 +145,10 @@ def export_tables(db_path: str, data_path: str) -> None:
     with duckdb.connect(db_path) as conn:
         df_db_columns = conn.sql("show all tables").df()
 
-        df_db_columns["schema_table"] = (
-            df_db_columns["schema"] + "." + df_db_columns["name"]
-        )
+        df_db_columns["schema_table"] = df_db_columns["schema"] + "." + df_db_columns["name"]
         df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
 
-        link_filter = (df_db_columns["schema"] == "link") | (
-            df_db_columns["name"] == "name_similarity"
-        )
+        link_filter = (df_db_columns["schema"] == "link") | (df_db_columns["name"] == "name_similarity")
 
         links_to_export = zip(
             df_db_columns[link_filter]["schema_table"].tolist(),
@@ -171,16 +160,10 @@ def export_tables(db_path: str, data_path: str) -> None:
                 (select * from {link[0]}
                 order by {link[1][0]} ASC, {link[1][1]} ASC);
             """
-            d = (
-                conn.execute(links_query)
-                .pl()
-                .cast({link[1][0]: pl.String, link[1][1]: pl.String})
-            )
+            d = conn.execute(links_query).pl().cast({link[1][0]: pl.String, link[1][1]: pl.String})
             d.write_parquet(f"{data_path}/export/{link[0].replace('.', '_')}.parquet")
 
-        main_filter = (df_db_columns["schema"] != "link") & (
-            df_db_columns["name"] != "name_similarity"
-        )
+        main_filter = (df_db_columns["schema"] != "link") & (df_db_columns["name"] != "name_similarity")
         main_to_export = zip(
             df_db_columns[main_filter]["schema_table"].tolist(),
             df_db_columns[main_filter]["id_col"].tolist(),
@@ -197,9 +180,7 @@ def export_tables(db_path: str, data_path: str) -> None:
     print("Exported all tables!")
 
 
-def check_table_exists(
-    db_conn: DuckDBPyConnection, schema: str, table_name: str
-) -> bool:
+def check_table_exists(db_conn: DuckDBPyConnection, schema: str, table_name: str) -> bool:
     """
     check if a table exists
 

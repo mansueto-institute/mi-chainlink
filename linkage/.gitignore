@@ -3,6 +3,7 @@
 *.csv
 *.yaml
 !config_template.yaml
+*.ipynb
 
 docs/source
 

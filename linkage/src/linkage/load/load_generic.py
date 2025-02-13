@@ -32,25 +32,17 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
             print(f"Data: {table_config['table_name']} -- Reading data")
             file_path = table_config.get("table_name_path")
             if not file_path:
-                raise ValueError(
-                    f"No file path provided for table: {table_config['table_name']}"
-                )
+                raise ValueError(f"No file path provided for table: {table_config['table_name']}")
 
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Data file not found: {file_path}")
 
             file_extension = file_path.split(".")[-1].lower()
             if file_extension not in ["csv", "parquet"]:
-                raise ValueError(
-                    f"Unsupported file format: {file_extension}. Supported formats: csv, parquet"
-                )
+                raise ValueError(f"Unsupported file format: {file_extension}. Supported formats: csv, parquet")
 
             try:
-                df = (
-                    pd.read_csv(file_path, dtype="string")
-                    if file_extension == "csv"
-                    else pd.read_parquet(file_path)
-                )
+                df = pd.read_csv(file_path, dtype="string") if file_extension == "csv" else pd.read_parquet(file_path)
                 # convert all columns to string
                 df = df.astype("string")
 
@@ -81,12 +73,8 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
                         table_config["name_cols"].remove(col.lower().replace(" ", "_"))
                     elif col in table_config["address_cols_og"]:
                         table_config["address_cols_og"].remove(col)
-                        table_config["address_cols"].remove(
-                            col.lower().replace(" ", "_")
-                        )
-                    print(
-                        f"Column {col} not found in file {file_path}. Removing from config"
-                    )
+                        table_config["address_cols"].remove(col.lower().replace(" ", "_"))
+                    print(f"Column {col} not found in file {file_path}. Removing from config")
 
             # Make headers snake case
             df.columns = [x.lower() for x in df.columns]
@@ -118,10 +106,7 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
 
             id_cols = []
             for col in df.columns:
-                if (
-                    any(c in col for c in all_id_cols)
-                    and "subaddress_identifier" not in col
-                ):
+                if any(c in col for c in all_id_cols) and "subaddress_identifier" not in col:
                     id_cols.append(col)
 
             for col in id_cols:

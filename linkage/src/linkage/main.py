@@ -83,8 +83,7 @@ def main(config_path: str) -> bool:
                 try:
                     db_columns = (
                         df_db_columns[
-                            (df_db_columns["schema"] == schema_name)
-                            & (df_db_columns["name"] == table["table_name"])
+                            (df_db_columns["schema"] == schema_name) & (df_db_columns["name"] == table["table_name"])
                         ]["column_names"]
                         .values[0]
                         .tolist()
@@ -92,11 +91,11 @@ def main(config_path: str) -> bool:
                 except Exception:
                     db_columns = []
 
-                columns = [col for col in table["name_cols"]]
-                columns += [col for col in table["address_cols"]]
+                columns = list(table["name_cols"])
+                columns += list(table["address_cols"])
 
                 # if all columns are in df_db_columns then continue
-                if not all([col in db_columns for col in columns]):
+                if not all(col in db_columns for col in columns):
                     new_schemas.append(schema_name)
                 else:
                     print(f"Skipping schema {schema_name}")
@@ -105,9 +104,7 @@ def main(config_path: str) -> bool:
 
     # load in all new schemas
     for new_schema in new_schemas:
-        schema_config = [
-            schema for schema in schemas if schema["schema_name"] == new_schema
-        ][0]
+        schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
         # load schema
         load_generic(
@@ -134,9 +131,7 @@ def main(config_path: str) -> bool:
 
     # create tfidf links within each new schema
     for new_schema in new_schemas:
-        schema_config = [
-            schema for schema in schemas if schema["schema_name"] == new_schema
-        ][0]
+        schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
         create_tfidf_within_links(
             db_path=db_path,
@@ -145,13 +140,9 @@ def main(config_path: str) -> bool:
         )
 
         # also create across links for each new schema
-        existing_schemas = [
-            schema for schema in schemas if schema["schema_name"] != new_schema
-        ]
+        existing_schemas = [schema for schema in schemas if schema["schema_name"] != new_schema]
 
-        new_schema_config = [
-            schema for schema in schemas if schema["schema_name"] == new_schema
-        ][0]
+        new_schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
         # make sure we havent already created this link combo
         for schema in existing_schemas:

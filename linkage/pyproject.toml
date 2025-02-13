@@ -116,6 +116,14 @@ ignore = [
     "E501",
     # DoNotAssignLambda
     "E731",
+    # Possible SQL injection
+    "S608",
+    # Prefer `next(...)`
+    "RUF015",
+    # too complex
+    "C901",
+    # long messages outside the exception
+    "TRY003",
 ]
 
 [tool.ruff.lint.per-file-ignores]

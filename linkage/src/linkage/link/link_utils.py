@@ -229,16 +229,10 @@ def execute_match_processing(
     link_table_exists = link_table_check != 0
 
     # append to link table
-    db_conn.execute(
-        query_append_to_links(
-            link_table_exists, link_table, out_temp_table_name, id_col_1, id_col_2
-        )
-    )
+    db_conn.execute(query_append_to_links(link_table_exists, link_table, out_temp_table_name, id_col_1, id_col_2))
 
     # set null matches to 0
-    db_conn.execute(
-        f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL"
-    )
+    db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL")
 
     # drop temp table of matches
     db_conn.execute(f"DROP TABLE link.{out_temp_table_name}")
@@ -319,7 +313,7 @@ def execute_match_unit(
         match_name_col = f"{right_side}_{left_side}_unit_match"
 
     # check link exclusion
-    if any([exclusion in match_name_col for exclusion in link_exclusions]):
+    if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
     temp_table = match_name_col + "_table"
@@ -424,7 +418,7 @@ def execute_match_street_name_and_num(
         match_name_col = f"{right_side}_{left_side}_street_num_match"
 
     # check link exclusion
-    if any([exclusion in match_name_col for exclusion in link_exclusions]):
+    if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
     temp_table = match_name_col + "_table"
@@ -487,9 +481,7 @@ def execute_match_street_name_and_num(
 # FUZZY MATCHING UTILS
 
 
-def generate_tfidf_links(
-    db_path: str, table_location: str = "entity.name_similarity"
-) -> None:
+def generate_tfidf_links(db_path: str, table_location: str = "entity.name_similarity") -> None:
     """
     create a table of tfidf matches between two entities and adds to db
 
@@ -548,7 +540,7 @@ def execute_fuzzy_link(
         match_name = f"{right_side}_{left_side}_fuzzy_match"
 
     # check link exclusion
-    if any([exclusion in match_name for exclusion in link_exclusions]):
+    if any(exclusion in match_name for exclusion in link_exclusions):
         return None
 
     same_condition = "TRUE"
@@ -557,9 +549,7 @@ def execute_fuzzy_link(
         left_ent_id_rename = f"{left_ent_id}_1"
         right_ent_id_rename = f"{right_ent_id}_2"
         # if same id, want to remove dupes
-        same_condition = (
-            f"{left_entity}_{left_ent_id_rename} < {right_entity}_{right_ent_id_rename}"
-        )
+        same_condition = f"{left_entity}_{left_ent_id_rename} < {right_entity}_{right_ent_id_rename}"
     else:
         left_ent_id_rename = left_ent_id
         right_ent_id_rename = right_ent_id
@@ -633,9 +623,7 @@ def execute_fuzzy_link(
         print(f"Created {match_name}")
 
         # fill in zeros
-        db_conn.execute(
-            f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL"
-        )
+        db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
 
     return None
 
@@ -643,9 +631,7 @@ def execute_fuzzy_link(
 # OTHER UTILS
 
 
-def generate_combos_within_across_tables(
-    name_idx: list, address_idx: list = []
-) -> list:
+def generate_combos_within_across_tables(name_idx: list, address_idx: list = []) -> list:
     """
     create all possible combinations of across tables in the same entity,
     but do not include combos within the same table
@@ -658,9 +644,7 @@ def generate_combos_within_across_tables(
 
     if len(address_idx) > 0:
         across_address_combos = []
-        across_combos_address_idx = list(
-            itertools.combinations(range(len(address_idx)), 2)
-        )
+        across_combos_address_idx = list(itertools.combinations(range(len(address_idx)), 2))
         for i, j in across_combos_address_idx:
             across_address_combos += itertools.product(address_idx[i], address_idx[j])
 
