@@ -1,1 +1,0 @@
-::: linkage.foo
