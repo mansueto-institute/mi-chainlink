@@ -2,22 +2,21 @@ import re
 
 import us
 import usaddress
-from scourgify import normalize_address_record
-from uszipcode import SearchEngine
-
-from src.linkage.cleaning.patterns import (
+from cleaning.patterns import (
     abb_patterns as ABB_PATTERNS,
 )
-from src.linkage.cleaning.patterns import (
+from cleaning.patterns import (
     end_of_line_patterns as EOL_PATTERNS,
 )
-from src.linkage.cleaning.patterns import (
+from cleaning.patterns import (
     excluded_patterns as EXCLUDED_PATTERNS,
 )
-from src.linkage.cleaning.patterns import (
+from cleaning.patterns import (
     word_patterns as WORD_PATTERNS,
 )
-from src.linkage.cleaning.usps_suffixes import suffixes
+from cleaning.usps_suffixes import suffixes
+from scourgify import normalize_address_record
+from uszipcode import SearchEngine
 
 engine = SearchEngine()
 zip_cache = {}

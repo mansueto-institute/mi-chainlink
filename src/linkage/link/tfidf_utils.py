@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import sparse_dot_topn as ct
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-from src.linkage.utils import logger
+from utils import logger
 
 
 def superfast_tfidf(entity_list: pd.DataFrame) -> list:

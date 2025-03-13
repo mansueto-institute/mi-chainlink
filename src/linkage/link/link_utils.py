@@ -3,9 +3,8 @@ from typing import Optional
 
 import duckdb
 from duckdb import DuckDBPyConnection
-
-from src.linkage.link.tfidf_utils import database_query
-from src.linkage.utils import logger
+from link.tfidf_utils import database_query, superfast_tfidf
+from utils import logger
 
 
 def execute_match(
@@ -512,7 +511,7 @@ def generate_tfidf_links(db_path: str, table_location: str = "entity.name_simila
     logger.debug(f"Query retrieved {len(entity_list)} rows")
 
     # returns a pandas df
-    # matches_df = superfast_tfidf(entity_list)
+    matches_df = superfast_tfidf(entity_list)
 
     print("Fuzzy Matching done")
     logger.info("Fuzzy Matching done")

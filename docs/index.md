@@ -219,6 +219,8 @@ The framework creates a DuckDB database with the following schema structure:
     - `name_similarity`: TF-IDF similarity scores between entity names
 2. **link**: Contains match information between entities
     - `{entity1}_{entity2}`: Links between entities with match scores
+3. **User-defined schemas**: Contains the original data with cleaned fields
+    - Tables as defined in your configuration
 
 ### Key Tables
 
