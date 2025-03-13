@@ -9,13 +9,19 @@ copyright: Maintained by <a href="https://asteinhart.com">asteinhart</a>.
 
 nav:
   - Home: index.md
-  - Modules: modules.md
+  - API: modules.md
+  - Contributing: contributing.md
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
           paths: ["src/linkage"]
+          options:
+            show_submodules: true
+          
+          
+
 theme:
   name: material
   feature:

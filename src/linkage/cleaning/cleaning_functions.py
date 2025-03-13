@@ -2,21 +2,22 @@ import re
 
 import us
 import usaddress
-from cleaning.patterns import (
-    abb_patterns as ABB_PATTERNS,
-)
-from cleaning.patterns import (
-    end_of_line_patterns as EOL_PATTERNS,
-)
-from cleaning.patterns import (
-    excluded_patterns as EXCLUDED_PATTERNS,
-)
-from cleaning.patterns import (
-    word_patterns as WORD_PATTERNS,
-)
-from cleaning.usps_suffixes import suffixes
 from scourgify import normalize_address_record
 from uszipcode import SearchEngine
+
+from src.linkage.cleaning.patterns import (
+    abb_patterns as ABB_PATTERNS,
+)
+from src.linkage.cleaning.patterns import (
+    end_of_line_patterns as EOL_PATTERNS,
+)
+from src.linkage.cleaning.patterns import (
+    excluded_patterns as EXCLUDED_PATTERNS,
+)
+from src.linkage.cleaning.patterns import (
+    word_patterns as WORD_PATTERNS,
+)
+from src.linkage.cleaning.usps_suffixes import suffixes
 
 engine = SearchEngine()
 zip_cache = {}
@@ -56,7 +57,7 @@ def predict_org(name: str) -> int:
         return 0
 
 
-def clean_zipcode(raw: any):
+def clean_zipcode(raw: str | int) -> str:
     """
     Modified from the function written by Anthony Moser of the deseguys project.
 
@@ -70,12 +71,13 @@ def clean_zipcode(raw: any):
     """
     try:
         zipcode = str(raw)[:5]
-        return zipcode
     except Exception:
         return ""
+    else:
+        return zipcode
 
 
-def identify_state_city(zipcode: str):
+def identify_state_city(zipcode: str) -> tuple:
     """
     Use zipcode to look up state and city info using the uszipcode API.
 
@@ -250,7 +252,7 @@ def remove_initial_I(raw: str) -> str:
     return raw
 
 
-def clean_names(raw: str, data_source="") -> str:
+def clean_names(raw: str) -> str:
     """
     Given a raw name string, clean the name and return it. Contains conditional
     logic based on the source of the data to handle data-specific cleaning cases.
@@ -259,8 +261,6 @@ def clean_names(raw: str, data_source="") -> str:
 
     Args:
         raw (str): A raw name string.
-        data_source (str), optional: The source of the data. If LLC, will handle cases
-        where the incoming data resembles "I, FIRSTNAME" common in incoming written fields.
 
     Returns:
         str: A cleaned name string.
@@ -268,11 +268,6 @@ def clean_names(raw: str, data_source="") -> str:
 
     if re.search(EXCLUDED_PATTERNS, raw):
         return None
-
-    # this is actually irrelevant if not using agent/secretary data
-    # don't have any instances of "I" - have some I" but very few
-    if data_source in ("LLC", "corp"):
-        raw = remove_initial_I(raw)
 
     name = raw.upper()
 

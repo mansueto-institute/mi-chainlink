@@ -4,6 +4,7 @@
 **/*.yaml
 **/*.ipynb
 !config_template.yaml
+**/*.DS_Store
 
 
 docs/source

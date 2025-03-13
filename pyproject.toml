@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "duckdb>=1.2.0",
     "fire>=0.7.0",
+    "ipython>=8.18.1",
     "jsonschema>=4.23.0",
     "numpy>=2.0.2",
     "pandas>=2.2.3",
@@ -125,6 +126,7 @@ ignore = [
     "C901",
     # long messages outside the exception
     "TRY003",
+    "TRY002"
 ]
 
 [tool.ruff.lint.per-file-ignores]

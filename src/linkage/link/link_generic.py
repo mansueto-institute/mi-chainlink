@@ -1,6 +1,6 @@
 import itertools
 
-from link.link_utils import (
+from src.linkage.link.link_utils import (
     execute_fuzzy_link,
     execute_match,
     execute_match_address,

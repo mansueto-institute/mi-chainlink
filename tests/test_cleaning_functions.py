@@ -1,4 +1,4 @@
-from woc.create_db.cleaning.cleaning_functions import (
+from src.linkage.cleaning.cleaning_functions import (
     clean_address,
     clean_names,
     clean_zipcode,
@@ -177,7 +177,7 @@ def test_clean_address_irregular():
         "street_pre_directional": None,
         "street_name": None,
         "street_post_type": None,
-        "unit_type": "SUITE UNIT",
+        "unit_type": "UNIT",
         "unit_number": "300",
         "city": "WESTCHESTER",
         "state": "IL",

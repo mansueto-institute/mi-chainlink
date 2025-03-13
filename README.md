@@ -1,6 +1,9 @@
-## Linkage
+# linkage
 
-A record linkage tool for matching records between multiple datasets built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/jamesturk), [Ana (Anita) Restrepo Lachman](https://github.com/johnketchum), [Caitlin P.](https://github.com/johnketchum), [Joaquin Pinto](https://github.com/johnketchum), and [Divij Sinha](https://github.com/johnketchum).
+A powerful, flexible framework for entity resolution and record linkage using DuckDB as the database engine built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/jamesturk), [Ana (Anita) Restrepo Lachman](https://github.com/johnketchum), [Caitlin P.](https://github.com/johnketchum), [Joaquin Pinto](https://github.com/johnketchum), and [Divij Sinha](https://github.com/johnketchum). 
+
+
+This package enables you to load data from various sources, clean and standardize entity names and addresses, and create links between entities based on exact and fuzzy matching techniques.
 
 Source: https://github.com/mansueto-institute/linkage
 
@@ -8,32 +11,43 @@ Documentation: TK
 
 Issues: https://github.com/mansueto-institute/linkage/issues
 
-## Installation
-
-First [install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
-
-```bash
-uv sync
-```
-
 ## Overview
 
-A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques. The system supports matching on both name and address fields, with multiple matching strategies including raw string matching, standardized street matching, unit-level matching when streets align, and fuzzy name matching using TF-IDF similarity scores. The tool is built with a generic loading interface that can handle various input formats (CSV, Parquet) and data schemas, making it adaptable for different record linkage scenarios while maintaining data in a DuckDB database for efficient processing. The matching process automatically handles edge cases like duplicate matches, self-matches within datasets, and provides configurable thresholds for fuzzy matching, while also supporting the ability to exclude specific match types through configuration.
+This framework helps you solve the entity resolution problem by:
 
-#### Input
+1. Loading data from multiple sources into a DuckDB database
+2. Cleaning and standardizing entity names and addresses
+3. Creating exact matches between entities based on names and addresses
+4. Generating fuzzy matches using TF-IDF similarity
+5. Exporting the resulting linked data for further analysis
 
-Use the config file to specify the input data, including the data source, id, name and address columns and additional settings.
+The system is designed to be configurable through YAML files and supports incremental updates to an existing database.
 
-#### Output
-
-The output of the matching process is a database with the following schema:
-
-- `entity.names`: A table containing the matches between the datasets.
-- `entity.name_similarity`: A table containing the similarity scores between the matches.
--
-
-## Example Usage
+## Installation
 
 ```bash
-python generic_load_link/main.py --config generic_load_link/configs/config_template.yaml
+# Clone the repository
+git clone https://github.com/mansueto-institute/linkage.git
+cd linkage
+```
+
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
+
+```bash
+make install
+```
+
+## Usage
+
+### Command Line Interface
+
+```bash
+# Run with default settings
+python main.py
+
+# Run with load only (no linking)
+python main.py --load_only=True
+
+# Run without probabilistic matching
+python main.py --probabilistic=False
 ```

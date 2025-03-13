@@ -1,1 +1,3 @@
-::: linkage.foo
+::: linkage
+    options:
+        show_submodules: true

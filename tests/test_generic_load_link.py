@@ -3,16 +3,15 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from woc.create_db.generic_load_link.link_generic import (
+
+from src.linkage.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from woc.create_db.generic_load_link.link_utils import generate_tfidf_links
-
-# cleaning tests (copy from existing functions)
-from woc.create_db.generic_load_link.load_utils import (
+from src.linkage.link.link_utils import generate_tfidf_links
+from src.linkage.load.load_utils import (
     clean_generic,
     load_to_db,
     update_entity_ids,
@@ -75,8 +74,8 @@ CONFIG_SMALL_PARCEL = {
 
 @pytest.fixture
 def make_simple_db():
-    if os.path.exists("db/test_simple.db"):
-        os.remove("db/test_simple.db")
+    if os.path.exists("tests/db/test_simple.db"):
+        os.remove("tests/db/test_simple.db")
 
     file1 = {
         "table_name": "test1",
@@ -111,7 +110,7 @@ def make_simple_db():
 
     df2 = clean_generic(df2, file2)
 
-    db_path = "db/test_simple.db"
+    db_path = "tests/db/test_simple.db"
     with duckdb.connect(db_path, read_only=False) as db_conn:
         load_to_db(df1, "test1", db_conn, "test_simple1")
 
@@ -154,8 +153,8 @@ def make_simple_db():
 @pytest.fixture
 def make_small_df():
     # test_small.db exists, then delete the db
-    if os.path.exists("db/test_small.db"):
-        os.remove("db/test_small.db")
+    if os.path.exists("tests/db/test_small.db"):
+        os.remove("tests/db/test_small.db")
 
     parcel_df = pd.DataFrame({
         "PIN": [
@@ -227,7 +226,7 @@ def make_small_df():
     parcel_df = clean_generic(parcel_df, parcel_file)
     llc_df = clean_generic(llc_df, llc_file)
 
-    db_path = "db/test_small.db"
+    db_path = "tests/db/test_small.db"
 
     with duckdb.connect(db_path, read_only=False) as db_conn:
         load_to_db(parcel_df, "parcels", db_conn, "parcel")
@@ -270,7 +269,7 @@ def make_small_df():
 
 
 def test_simple_exact_within(make_simple_db):
-    with duckdb.connect("db/test_simple.db", read_only=True) as db_conn:
+    with duckdb.connect("tests/db/test_simple.db", read_only=True) as db_conn:
         query = "SELECT * FROM link.test_simple1_test_simple1"
         df = db_conn.execute(query).df()
 
@@ -289,7 +288,7 @@ def test_simple_exact_within(make_simple_db):
 
 
 def test_simple_exact_across(make_simple_db):
-    with duckdb.connect("db/test_simple.db", read_only=True) as db_conn:
+    with duckdb.connect("tests/db/test_simple.db", read_only=True) as db_conn:
         query = "SELECT * FROM link.test_simple1_test_simple2"
         df = db_conn.execute(query).df()
 
@@ -308,7 +307,7 @@ def test_simple_exact_across(make_simple_db):
 
 
 def test_small_entity_tables(make_small_df):
-    db_path = "db/test_small.db"
+    db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=False) as db_conn:
         query = "SELECT * FROM entity.name"
         df = db_conn.execute(query).df()
@@ -324,7 +323,7 @@ def test_small_entity_tables(make_small_df):
 
 
 def test_small_exact_within(make_small_df):
-    db_path = "db/test_small.db"
+    db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_llc"
         df = db_conn.execute(query).df()
@@ -352,7 +351,7 @@ def test_small_exact_within(make_small_df):
 
 
 def test_small_exact_across(make_small_df):
-    db_path = "db/test_small.db"
+    db_path = "tests/db/test_small.db"
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_parcel"
@@ -373,7 +372,7 @@ def test_small_exact_across(make_small_df):
 
 
 def test_small_fuzzy(make_small_df):
-    db_path = "db/test_small.db"
+    db_path = "tests/db/test_small.db"
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_parcel"

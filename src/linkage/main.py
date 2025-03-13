@@ -1,25 +1,28 @@
-import os
+import pathlib
 
 import duckdb
 import fire
 import pandas as pd
-import yaml
-from link.link_generic import (
+
+from src.linkage.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from link.link_utils import generate_tfidf_links
-from load.load_generic import load_generic
-from utils import (
-    export_tables,
-    load_config,
-    update_config,
-)
+from src.linkage.link.link_utils import generate_tfidf_links
+from src.linkage.load.load_generic import load_generic
+from src.linkage.utils import create_config, export_tables, logger, update_config
+
+# parent path
+DIR = pathlib.Path(__file__).parent
 
 
-def main(config_path: str, load_only: bool = False) -> bool:
+def linkage(
+    config: dict,
+    load_only: bool = False,
+    probabilistic: bool = True,
+) -> bool:
     """
     Given a correctly formatted config file,
         * load in any schemas in the config that are not already in the database
@@ -30,19 +33,9 @@ def main(config_path: str, load_only: bool = False) -> bool:
     Returns true if the database was created successfully.
     """
 
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Config file not found at: {config_path}")
-
-    try:
-        config = load_config(config_path)
-    except yaml.YAMLError as err:
-        raise ValueError(f"Invalid YAML configuration file: {err!s}") from err
-    except Exception as err:
-        raise Exception(f"Error loading configuration: {err!s}") from err
-
     # handle options
     force_db_create = config["options"]["force_db_create"]
-    db_path = config["options"]["db_path"]
+    db_path = DIR / "db/linked.db"
 
     update_config_only = config["options"]["update_config_only"]
     if update_config_only:
@@ -99,6 +92,7 @@ def main(config_path: str, load_only: bool = False) -> bool:
                     new_schemas.append(schema_name)
                 else:
                     print(f"Skipping schema {schema_name}")
+                    logger.debug(f"Skipping schema {schema_name}")
         else:
             new_schemas.append(schema_name)
 
@@ -135,11 +129,12 @@ def main(config_path: str, load_only: bool = False) -> bool:
         for new_schema in new_schemas:
             schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
-            create_tfidf_within_links(
-                db_path=db_path,
-                schema_config=schema_config,
-                link_exclusions=link_exclusions,
-            )
+            if probabilistic:
+                create_tfidf_within_links(
+                    db_path=db_path,
+                    schema_config=schema_config,
+                    link_exclusions=link_exclusions,
+                )
 
             # also create across links for each new schema
             existing_schemas = [schema for schema in schemas if schema["schema_name"] != new_schema]
@@ -161,22 +156,45 @@ def main(config_path: str, load_only: bool = False) -> bool:
                 link_exclusions=link_exclusions,
             )
 
-            create_tfidf_across_links(
-                db_path=db_path,
-                new_schema=new_schema_config,
-                existing_schema=existing_schema,
-                link_exclusions=link_exclusions,
-            )
+            if probabilistic:
+                create_tfidf_across_links(
+                    db_path=db_path,
+                    new_schema=new_schema_config,
+                    existing_schema=existing_schema,
+                    link_exclusions=link_exclusions,
+                )
 
     update_config(db_path, config)
 
     export_tables_flag = config["options"]["export_tables"]
     if export_tables_flag:
-        path = config["options"].get("export_tables_path", "/data")
+        path = DIR / "data" / "export"
         export_tables(db_path, path)
 
     return
 
 
+def main(
+    load_only: bool = False,
+    probabilistic: bool = True,
+) -> None:
+    """
+    Given a correctly formatted config file,
+        * load in any schemas in the config that are not already in the database
+        * create within links for each new schema
+        * create across links for each new schema with all existing schemas
+
+
+    Returns true if the database was created successfully.
+    """
+    config = create_config()
+
+    linkage(config, load_only, probabilistic)
+
+    print("Linkage complete, database created")
+    logger.info("Linkage complete, database created")
+
+
 if __name__ == "__main__":
+    # arg parser
     fire.Fire(main)

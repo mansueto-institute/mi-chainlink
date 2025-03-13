@@ -3,7 +3,9 @@ from typing import Optional
 
 import duckdb
 from duckdb import DuckDBPyConnection
-from link.tfidf_utils import database_query, superfast_tfidf
+
+from src.linkage.link.tfidf_utils import database_query
+from src.linkage.utils import logger
 
 
 def execute_match(
@@ -103,6 +105,7 @@ def execute_match(
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
         print(f"Created {match_name_col}")
+        logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
             db_conn=db_conn,
@@ -234,16 +237,10 @@ def execute_match_processing(
     link_table_exists = link_table_check != 0
 
     # append to link table
-    db_conn.execute(
-        query_append_to_links(
-            link_table_exists, link_table, out_temp_table_name, id_col_1, id_col_2
-        )
-    )
+    db_conn.execute(query_append_to_links(link_table_exists, link_table, out_temp_table_name, id_col_1, id_col_2))
 
     # set null matches to 0
-    db_conn.execute(
-        f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL"
-    )
+    db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL")
 
     # drop temp table of matches
     db_conn.execute(f"DROP TABLE link.{out_temp_table_name}")
@@ -372,6 +369,7 @@ def execute_match_unit(
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
         print(f"Created {match_name_col}")
+        logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
             db_conn=db_conn,
@@ -481,6 +479,7 @@ def execute_match_street_name_and_num(
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
         print(f"Created {match_name_col}")
+        logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
             db_conn=db_conn,
@@ -497,9 +496,7 @@ def execute_match_street_name_and_num(
 # FUZZY MATCHING UTILS
 
 
-def generate_tfidf_links(
-    db_path: str, table_location: str = "entity.name_similarity"
-) -> None:
+def generate_tfidf_links(db_path: str, table_location: str = "entity.name_similarity") -> None:
     """
     create a table of tfidf matches between two entities and adds to db
 
@@ -507,15 +504,18 @@ def generate_tfidf_links(
     """
 
     print("Process started")
+    logger.info("Process started")
 
     # retrieve entity list, print length of dataframe
     entity_list = database_query(db_path)
     print(f"Query retrieved {len(entity_list)} rows")
+    logger.debug(f"Query retrieved {len(entity_list)} rows")
 
     # returns a pandas df
-    matches_df = superfast_tfidf(entity_list)
+    # matches_df = superfast_tfidf(entity_list)
 
     print("Fuzzy Matching done")
+    logger.info("Fuzzy Matching done")
 
     # load back to db
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
@@ -569,9 +569,7 @@ def execute_fuzzy_link(
         left_ent_id_rename = f"{left_ent_id}_1"
         right_ent_id_rename = f"{right_ent_id}_2"
         # if same id, want to remove dupes
-        same_condition = (
-            f"{left_entity}_{left_ent_id_rename} < {right_entity}_{right_ent_id_rename}"
-        )
+        same_condition = f"{left_entity}_{left_ent_id_rename} < {right_entity}_{right_ent_id_rename}"
     else:
         left_ent_id_rename = left_ent_id
         right_ent_id_rename = right_ent_id
@@ -643,11 +641,10 @@ def execute_fuzzy_link(
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(query)
         print(f"Created {match_name}")
+        logger.debug(f"Created {match_name}")
 
         # fill in zeros
-        db_conn.execute(
-            f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL"
-        )
+        db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
 
     return None
 
@@ -655,9 +652,7 @@ def execute_fuzzy_link(
 # OTHER UTILS
 
 
-def generate_combos_within_across_tables(
-    name_idx: list, address_idx: Optional[list] = None
-) -> list:
+def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[list] = None) -> list:
     """
     create all possible combinations of across tables in the same entity,
     but do not include combos within the same table
@@ -673,9 +668,7 @@ def generate_combos_within_across_tables(
 
     if len(address_idx) > 0:
         across_address_combos = []
-        across_combos_address_idx = list(
-            itertools.combinations(range(len(address_idx)), 2)
-        )
+        across_combos_address_idx = list(itertools.combinations(range(len(address_idx)), 2))
         for i, j in across_combos_address_idx:
             across_address_combos += itertools.product(address_idx[i], address_idx[j])
 

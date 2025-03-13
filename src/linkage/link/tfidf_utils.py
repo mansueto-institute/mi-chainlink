@@ -1,4 +1,3 @@
-import argparse
 import re
 import time
 
@@ -7,6 +6,8 @@ import numpy as np
 import pandas as pd
 import sparse_dot_topn as ct
 from sklearn.feature_extraction.text import TfidfVectorizer
+
+from src.linkage.utils import logger
 
 
 def superfast_tfidf(entity_list: pd.DataFrame) -> list:
@@ -35,6 +36,12 @@ def superfast_tfidf(entity_list: pd.DataFrame) -> list:
     print(f"Time to calculate matches: {t3 - t2:.2f} seconds")
     print(f"Time to get matches: {t4 - t3:.2f} seconds")
     print(f"Time to clean matches: {t5 - t4:.2f} seconds")
+
+    logger.debug(f"Time to preprocess: {t1 - t0:.2f} seconds")
+    logger.debug(f"Time to vectorize: {t2 - t1:.2f} seconds")
+    logger.debug(f"Time to calculate matches: {t3 - t2:.2f} seconds")
+    logger.debug(f"Time to get matches: {t4 - t3:.2f} seconds")
+    logger.debug(f"Time to clean matches: {t5 - t4:.2f} seconds")
 
     return matches_df
 
@@ -203,40 +210,3 @@ def database_query(db_path: str, limit=None) -> pd.DataFrame:
             entity_list = entity_list.sample(n=limit, random_state=12345)
 
     return entity_list
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument("file_path", type=str, help="Path to DuckDB file")
-    parser.add_argument("--limit", type=int, help="Limit for entity query")
-    parser.add_argument("--n", type=int, help="n-gram length for TF-IDF")
-    parser.add_argument("-t", action="store_true", help="flag for testing function")
-
-    args = parser.parse_args()
-
-    limit = args.limit
-    output_filename = "links.parquet"
-
-    if args.t:
-        if not args.limit:
-            limit = 100000
-        output_filename = "links_test_with.parquet"
-
-    start_time = time.time()
-
-    # format the time to display hours and minutes
-    start_time_struct = time.localtime(start_time)
-    formatted_date = time.strftime("%d-%m-%Y", start_time_struct)
-    formatted_time = time.strftime("%H:%M", start_time_struct)
-
-    print(f"Process started on {formatted_date} at {formatted_time}")
-
-    # retrieve entity list, print length of dataframe
-    entity_list = database_query(args.file_path, limit)
-    print(f"Query retrieved {len(entity_list)} rows")
-
-    matches_df = superfast_tfidf(entity_list)
-
-    print("Fuzzy Matching done")
-
-    # save to db

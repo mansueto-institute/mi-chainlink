@@ -1,8 +1,6 @@
 options:
   bad_address_path: data/bad_addresses.csv # path to a csv file with bad addresses that should not be matched
-  db_path: db/sample.db # path to the output database file
   export_tables: true # bool whether to export the tables to csv files
-  export_tables_path: data/export/ # path to the directory to export the tables
   force_db_create: false # whether to force overwrite the existing database or add to existing tables
   link_exclusions: # can specify exclusions for the matching process
   update_config_only: false # whether to update the config only
