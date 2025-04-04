@@ -3,8 +3,9 @@ from typing import Optional
 
 import duckdb
 from duckdb import DuckDBPyConnection
-from link.tfidf_utils import database_query, superfast_tfidf
-from utils import logger
+
+from src.linkage.link.tfidf_utils import database_query, superfast_tfidf
+from src.linkage.utils import logger
 
 
 def execute_match(
