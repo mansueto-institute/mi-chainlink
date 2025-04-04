@@ -1,10 +1,10 @@
 site_name: linkage
-repo_url: https://github.com/asteinhart/linkage
+repo_url: https://github.com/mansueto-institute/linkage
 site_url: https://asteinhart.github.io/linkage
 site_description: A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques.
 site_author: Mansueto Institute,Austin Steinhart
 edit_uri: edit/main/docs/
-repo_name: asteinhart/linkage
+repo_name: mansueto-institute/linkage
 copyright: Maintained by <a href="https://asteinhart.com">asteinhart</a>.
 
 nav:
@@ -47,7 +47,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/asteinhart/linkage
+      link: https://github.com/mansueto-institute/linkage
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/linkage
 
