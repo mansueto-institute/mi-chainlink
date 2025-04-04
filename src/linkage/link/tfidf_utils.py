@@ -1,5 +1,6 @@
 import re
 import time
+from pathlib import Path
 
 import duckdb
 import numpy as np
@@ -46,7 +47,7 @@ def superfast_tfidf(entity_list: pd.DataFrame) -> list:
     return matches_df
 
 
-def get_matches_df(sparse_matrix: pd.DataFrame, name_vector: list, id_vector: list, top=None) -> pd.DataFrame:
+def get_matches_df(sparse_matrix: pd.DataFrame, name_vector: list, id_vector: list, top: None = None) -> pd.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -190,7 +191,7 @@ def ngrams(string: str, n: int = 3) -> list:
     return ["".join(ngram) for ngram in ngrams]
 
 
-def database_query(db_path: str, limit=None) -> pd.DataFrame:
+def database_query(db_path: str | Path, limit: int | None = None) -> pd.DataFrame:
     """
     queries entities for comparison
     """

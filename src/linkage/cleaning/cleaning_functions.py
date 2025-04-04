@@ -20,7 +20,7 @@ from src.linkage.cleaning.patterns import (
 from src.linkage.cleaning.usps_suffixes import suffixes
 
 engine = SearchEngine()
-zip_cache = {}
+zip_cache: dict[str, dict[str, str]] = {}
 
 state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
@@ -97,7 +97,7 @@ def identify_state_city(zipcode: str) -> tuple:
 
         else:
             zipcode_obj = engine.by_zipcode(int(zipcode))
-            zip_cache[zipcode] = zipcode
+            # zip_cache[zipcode] = zipcode
 
             zip_city = zipcode_obj.major_city.upper()
             zip_state = zipcode_obj.state
@@ -252,7 +252,7 @@ def remove_initial_I(raw: str) -> str:
     return raw
 
 
-def clean_names(raw: str) -> str:
+def clean_names(raw: str) -> str | None:
     """
     Given a raw name string, clean the name and return it. Contains conditional
     logic based on the source of the data to handle data-specific cleaning cases.
@@ -275,5 +275,8 @@ def clean_names(raw: str) -> str:
 
     name = re.sub(r"[^a-zA-Z0-9\s]", "", name)
     name = re.sub(r"\s{2,}", " ", name)
-    name = None if (name == "") or (name == " ") else name
+    if (name == "") or (name == " "):
+        return None
+    else:
+        return name
     return name

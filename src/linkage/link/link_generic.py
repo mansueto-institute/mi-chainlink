@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 
 from src.linkage.link.link_utils import (
     execute_fuzzy_link,
@@ -8,7 +9,7 @@ from src.linkage.link.link_utils import (
 )
 
 
-def create_within_links(db_path: str, schema_config: dict, link_exclusions: list) -> None:
+def create_within_links(db_path: str | Path, schema_config: dict, link_exclusions: list) -> None:
     """
     Creates exact string matches on name and address fields for entity and
     entity.
@@ -131,7 +132,7 @@ def create_within_links(db_path: str, schema_config: dict, link_exclusions: list
         )
 
 
-def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list) -> None:
+def create_across_links(db_path: str | Path, new_schema: dict, existing_schema: dict, link_exclusions: list) -> None:
     """
     For each entity in the existing_db list, create links between the new entity
     and the existing entity.
@@ -226,7 +227,7 @@ def create_across_links(db_path: str, new_schema: dict, existing_schema: dict, l
         )
 
 
-def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions: list) -> None:
+def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exclusions: list) -> None:
     """
     create tfidf links within entity
 
@@ -284,7 +285,9 @@ def create_tfidf_within_links(db_path: str, schema_config: dict, link_exclusions
         )
 
 
-def create_tfidf_across_links(db_path: str, new_schema: dict, existing_schema: dict, link_exclusions: list) -> None:
+def create_tfidf_across_links(
+    db_path: str | Path, new_schema: dict, existing_schema: dict, link_exclusions: list
+) -> None:
     """
     create all fuzzy links across new entity and existing entity
 

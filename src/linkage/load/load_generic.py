@@ -1,5 +1,6 @@
 import datetime
 import os
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -14,7 +15,7 @@ from src.linkage.load.load_utils import (
 from src.linkage.utils import logger
 
 
-def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None:
+def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) -> None:
     """
     Loads a generic file into the database.
 
@@ -85,8 +86,8 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
                     logger.debug(f"Column {col} not found in file {file_path}. Removing from config")
 
             # Make headers snake case
-            df.columns = [x.lower() for x in df.columns]
-            df.columns = df.columns.str.replace(" ", "_", regex=True)
+            df.columns = [x.lower().replace(" ", "_") for x in df.columns]
+            # df.columns = df.columns.str, regex=True)
 
             df = clean_generic(df, table_config)
 
@@ -136,4 +137,5 @@ def load_generic(db_path: str, schema_config: dict, bad_addresses: list) -> None
 
 
 if __name__ == "__main__":
-    load_generic("load_config.json")
+    # load_generic("load_config.json")
+    pass

@@ -3,15 +3,16 @@ import pathlib
 import duckdb
 import fire
 import pandas as pd
-from link.link_generic import (
+
+from src.linkage.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from link.link_utils import generate_tfidf_links
-from load.load_generic import load_generic
-from utils import create_config, export_tables, logger, update_config
+from src.linkage.link.link_utils import generate_tfidf_links
+from src.linkage.load.load_generic import load_generic
+from src.linkage.utils import create_config, export_tables, logger, update_config
 
 # parent path
 DIR = pathlib.Path(__file__).parent
@@ -170,7 +171,7 @@ def linkage(
         path = DIR / "data" / "export"
         export_tables(db_path, path)
 
-    return
+    return True  ## TODO: check if this is true or false
 
 
 def main(

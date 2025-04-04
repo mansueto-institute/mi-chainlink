@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import duckdb
 import jsonschema
@@ -9,7 +10,7 @@ import yaml
 from duckdb import DuckDBPyConnection
 
 
-def setup_logger(name: str, log_file: str, level=logging.DEBUG) -> logging.Logger:
+def setup_logger(name: str, log_file: str, level: logging._Level = logging.DEBUG) -> logging.Logger:
     """
     To setup as many loggers as you want
     # from https://stackoverflow.com/questions/11232230/logging-to-two-files-with-different-settings
@@ -61,7 +62,7 @@ def load_config(file_path: str) -> dict:
     return config
 
 
-def validate_config(config: dict) -> None:
+def validate_config(config: dict) -> bool:
     """
     Validates the configuration against a schema
     """
@@ -116,12 +117,13 @@ def validate_config(config: dict) -> None:
     try:
         jsonschema.validate(instance=config, schema=schema)
     except jsonschema.exceptions.ValidationError as e:
-        return ValueError(f"Invalid configuration: {e!s}")
+        # return ValueError(f"Invalid configuration: {e!s}")
+        return False
     else:  # no exception
         return True
 
 
-def update_config(db_path: str, config: dict) -> None:
+def update_config(db_path: str | Path, config: dict) -> None:
     """
     update config by adding in all existing link columns and last updated time.
     writes config back out to config.yaml
@@ -143,7 +145,7 @@ def update_config(db_path: str, config: dict) -> None:
         yaml.dump(config, f)
 
 
-def export_tables(db_path: str, data_path: str) -> None:
+def export_tables(db_path: str | Path, data_path: str | Path) -> None:
     """
     export all tables from database to parquet files in {data_path}/export directory
 
@@ -154,7 +156,7 @@ def export_tables(db_path: str, data_path: str) -> None:
     if not os.path.exists(data_path):
         os.makedirs(data_path)
 
-    def find_id_cols(row):
+    def find_id_cols(row: dict) -> list:  # TODO: check if this is correct
         if row["schema"] == "link" or row["name"] == "name_similarity":
             return row["column_names"][:2]
         elif row["schema"] == "entity":
@@ -218,7 +220,7 @@ def check_table_exists(db_conn: DuckDBPyConnection, schema: str, table_name: str
     return db_conn.fetchone()[0] == 1
 
 
-def create_config():
+def create_config() -> dict:
     """
     Helper to create config file from user input if not pre created
     """
@@ -236,7 +238,7 @@ def create_config():
             if validate_config(config):
                 break
             else:  # invalid config
-                print(validate_config(config))
+                # print(validate_config(config))
                 print("Invalid config. Please enter a valid yaml config:")
                 create_config_path = input().strip()
                 config = load_config(create_config_path)
@@ -277,7 +279,7 @@ def create_config():
         return config
 
 
-def add_schema_config(config: dict):
+def add_schema_config(config: dict) -> dict:
     """
     Helper to add a schema to an existing config
     """
@@ -296,7 +298,7 @@ def add_schema_config(config: dict):
     return config
 
 
-def add_table_config(config: dict, schema_name: str):
+def add_table_config(config: dict, schema_name: str) -> dict:
     """
     Helper to add a table to an existing schema
     """

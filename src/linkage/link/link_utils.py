@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 from typing import Optional
 
 import duckdb
@@ -9,7 +10,7 @@ from src.linkage.utils import logger
 
 
 def execute_match(
-    db_path: str,
+    db_path: str | Path,
     match_type: str,
     left_entity: str,
     left_table: str,
@@ -120,7 +121,7 @@ def execute_match(
 
 
 def execute_match_address(
-    db_path: str,
+    db_path: str | Path,
     left_entity: str,
     left_table: str,
     left_address: str,
@@ -252,7 +253,7 @@ def query_append_to_links(
     table_to_append: str,
     id_col1: str,
     id_col2: str,
-) -> None:
+) -> str:
     """
     query to append links to link table
     runs in execute_match_processing()
@@ -277,7 +278,7 @@ def query_append_to_links(
 
 
 def execute_match_unit(
-    db_path: str,
+    db_path: str | Path,
     left_entity: str,
     right_entity: str,
     street_match_to_check: str,
@@ -384,7 +385,7 @@ def execute_match_unit(
 
 
 def execute_match_street_name_and_num(
-    db_path: str,
+    db_path: str | Path,
     left_entity: str,
     left_table: str,
     left_address: str,
@@ -496,7 +497,7 @@ def execute_match_street_name_and_num(
 # FUZZY MATCHING UTILS
 
 
-def generate_tfidf_links(db_path: str, table_location: str = "entity.name_similarity") -> None:
+def generate_tfidf_links(db_path: str | Path, table_location: str = "entity.name_similarity") -> None:
     """
     create a table of tfidf matches between two entities and adds to db
 
@@ -527,7 +528,7 @@ def generate_tfidf_links(db_path: str, table_location: str = "entity.name_simila
 
 
 def execute_fuzzy_link(
-    db_path: str,
+    db_path: str | Path,
     left_entity: str,
     left_table: str,
     left_ent_id: str,
@@ -652,7 +653,7 @@ def execute_fuzzy_link(
 # OTHER UTILS
 
 
-def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[list] = None) -> list:
+def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[list] = None) -> tuple:
     """
     create all possible combinations of across tables in the same entity,
     but do not include combos within the same table
@@ -662,12 +663,12 @@ def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[l
         address_idx = []
 
     across_combos_name_idx = list(itertools.combinations(range(len(name_idx)), 2))
-    across_name_combos = []
+    across_name_combos: list = []
     for i, j in across_combos_name_idx:
         across_name_combos += itertools.product(name_idx[i], name_idx[j])
 
     if len(address_idx) > 0:
-        across_address_combos = []
+        across_address_combos: list = []
         across_combos_address_idx = list(itertools.combinations(range(len(address_idx)), 2))
         for i, j in across_combos_address_idx:
             across_address_combos += itertools.product(address_idx[i], address_idx[j])

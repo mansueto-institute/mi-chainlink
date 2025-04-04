@@ -120,7 +120,7 @@ def create_id_col(df: pd.DataFrame, col: str) -> pd.DataFrame:
     return df
 
 
-def update_entity_ids(df: pd.DataFrame, entity_id_col: str, db_conn) -> None:
+def update_entity_ids(df: pd.DataFrame, entity_id_col: str, db_conn: DuckDBPyConnection) -> None:
     """
     Adds new ids to the entity schema table. If the value is already in the table, it is not added.
 
@@ -180,14 +180,14 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
     """
     Flags rows with bad addresses as provided by user
     """
-    bad_addresses = tuple(bad_addresses)
+    bad_addresses_tuple = tuple(bad_addresses)
 
     query = f"""
             CREATE OR REPLACE TABLE {table} AS
             SELECT *,
                     CASE WHEN
-                        ({address_col} in {bad_addresses}
-                        OR {address_col}_street in {bad_addresses}) THEN 1
+                        ({address_col} in {bad_addresses_tuple}
+                        OR {address_col}_street in {bad_addresses_tuple}) THEN 1
                     ELSE 0 END as skip_address
             from {table}
             """
