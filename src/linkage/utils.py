@@ -10,7 +10,7 @@ import yaml
 from duckdb import DuckDBPyConnection
 
 
-def setup_logger(name: str, log_file: str, level: logging._Level = logging.DEBUG) -> logging.Logger:
+def setup_logger(name: str, log_file: str, level: int | str = logging.DEBUG) -> logging.Logger:
     """
     To setup as many loggers as you want
     # from https://stackoverflow.com/questions/11232230/logging-to-two-files-with-different-settings
