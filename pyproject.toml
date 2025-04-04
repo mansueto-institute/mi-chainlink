@@ -20,14 +20,13 @@ classifiers = [
 dependencies = [
     "duckdb>=1.2.0",
     "fire>=0.7.0",
-    "ipython>=8.18.1",
     "jsonschema>=4.23.0",
     "numpy>=2.0.2",
     "pandas>=2.2.3",
     "polars>=1.22.0",
-    "pre-commit>=4.1.0",
     "pyarrow>=19.0.0",
     "python-levenshtein>=0.26.1",
+    "pyyaml>=6.0.2",
     "scikit-learn>=1.6.1",
     "sparse-dot-topn>=1.1.5",
     "sqlalchemy-mate<=2.0.0.0",
@@ -54,6 +53,7 @@ dev = [
     "mkdocs>=1.4.2",
     "mkdocs-material>=8.5.10",
     "mkdocstrings[python]>=0.26.1",
+    "ipython>=8.18.1",
 ]
 
 [build-system]
@@ -61,6 +61,8 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 
+[tool.deptry.per_rule_ignores]
+DEP002 = ["pyarrow", "python-levenshtein", "sqlalchemy-mate"]
 
 [tool.mypy]
 files = ["src"]
