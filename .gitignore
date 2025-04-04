@@ -4,6 +4,7 @@
 **/*.yaml
 **/*.ipynb
 !config_template.yaml
+!.pre-commit-config.yaml
 **/*.DS_Store
 
 
