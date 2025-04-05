@@ -9,8 +9,11 @@ copyright: Maintained by <a href="https://asteinhart.com">asteinhart</a>.
 
 nav:
   - Home: index.md
+  - Advanced Features: advanced-features.md
+  - Output Database Schema: output-db-schema.md
   - API: modules.md
   - Contributing: contributing.md
+
 plugins:
   - search
   - mkdocstrings:
