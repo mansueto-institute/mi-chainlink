@@ -1,12 +1,12 @@
 import pandas as pd
 from duckdb import DuckDBPyConnection
 
-from src.linkage.cleaning.cleaning_functions import (
+from linkage.cleaning.cleaning_functions import (
     clean_address,
     clean_names,
     clean_zipcode,
 )
-from src.linkage.utils import check_table_exists
+from linkage.utils import check_table_exists
 
 
 def load_to_db(df: pd.DataFrame, table_name: str, db_conn: DuckDBPyConnection, schema: str) -> None:
@@ -72,33 +72,34 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
             # lower snake case
             col = col.lower().replace(" ", "_")
 
-        raw_address = col + "_raw"
-        temp_address = "temp_" + col
+            raw_address = col + "_raw"
+            temp_address = "temp_" + col
+            print(f"Cleaning address column {col}")
 
-        df[raw_address] = df[col]
+            df[raw_address] = df[col]
 
-        df.loc[:, temp_address] = df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
-        df.reset_index(drop=True, inplace=True)
+            df.loc[:, temp_address] = df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
+            df.reset_index(drop=True, inplace=True)
 
-        df = pd.merge(
-            df,
-            pd.DataFrame(df.loc[:, temp_address].tolist()).add_prefix(f"{col}_"),
-            left_index=True,
-            right_index=True,
-        )
+            df = pd.merge(
+                df,
+                pd.DataFrame(df.loc[:, temp_address].tolist()).add_prefix(f"{col}_"),
+                left_index=True,
+                right_index=True,
+            )
 
-        # clean zipcode
-        df.loc[:, f"{col}_postal_code"] = df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
+            # clean zipcode
+            df.loc[:, f"{col}_postal_code"] = df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
 
-        # create col for address id
-        df[col + "_address"] = df[raw_address]
+            # create col for address id
+            df[col + "_address"] = df[raw_address]
 
-        id_cols = ["address", "street", "street_name"]
+            id_cols = ["address", "street", "street_name"]
 
-        # create id col
-        for id_col in id_cols:
-            name = col + "_" + id_col
-            df = create_id_col(df, name)
+            # create id col
+            for id_col in id_cols:
+                name = col + "_" + id_col
+                df = create_id_col(df, name)
 
         # drop temp cols
         df = df.drop(columns=[temp_address, col + "_address"])
@@ -180,6 +181,7 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
     """
     Flags rows with bad addresses as provided by user
     """
+    print(f"Flagging bad addresses in {table} table")
     bad_addresses_tuple = tuple(bad_addresses)
 
     query = f"""

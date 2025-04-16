@@ -5,14 +5,14 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from src.linkage.load.load_utils import (
+from linkage.load.load_utils import (
     clean_generic,
     execute_flag_bad_addresses,
     load_to_db,
     update_entity_ids,
     validate_input_data,
 )
-from src.linkage.utils import logger
+from linkage.utils import logger
 
 
 def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) -> None:

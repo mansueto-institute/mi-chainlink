@@ -1,7 +1,8 @@
 import itertools
 from pathlib import Path
 
-from src.linkage.link.link_utils import (
+from linkage.link.link_utils import (
+    execute_address_fuzzy_link,
     execute_fuzzy_link,
     execute_match,
     execute_match_address,
@@ -255,6 +256,22 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
                 right_ent_id=table["id_col"],
                 right_name_col=right_name,
                 tfidf_table="entity.name_similarity",
+                link_exclusions=link_exclusions,
+            )
+
+        address_combos = list(itertools.combinations_with_replacement(table["address_cols"], 2))
+        for left_address, right_address in address_combos:
+            execute_address_fuzzy_link(
+                db_path=db_path,
+                left_entity=new_entity,
+                left_table=table["table_name"],
+                left_ent_id=table["id_col"],
+                left_address_col=left_address,
+                right_entity=new_entity,
+                right_table=table["table_name"],
+                right_ent_id=table["id_col"],
+                right_address_col=right_address,
+                tfidf_table="entity.street_name_similarity",
                 link_exclusions=link_exclusions,
             )
 

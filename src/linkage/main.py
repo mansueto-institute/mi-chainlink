@@ -4,15 +4,15 @@ import duckdb
 import fire
 import pandas as pd
 
-from src.linkage.link.link_generic import (
+from linkage.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from src.linkage.link.link_utils import generate_tfidf_links
-from src.linkage.load.load_generic import load_generic
-from src.linkage.utils import create_config, export_tables, logger, update_config
+from linkage.link.link_utils import generate_tfidf_links
+from linkage.load.load_generic import load_generic
+from linkage.utils import create_config, export_tables, logger, update_config
 
 # parent path
 DIR = pathlib.Path(__file__).parent
@@ -120,6 +120,9 @@ def linkage(
         # only if there are new schemas added
         if len(new_schemas) > 0:
             generate_tfidf_links(db_path, table_location="entity.name_similarity")
+            generate_tfidf_links(
+                db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
+            )
 
         # for across link
         links = []
