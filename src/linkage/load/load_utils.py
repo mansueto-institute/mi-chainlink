@@ -182,19 +182,22 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
     Flags rows with bad addresses as provided by user
     """
     console.log(f"[yellow] Flagging bad addresses in {table} table for {address_col} column")
-    bad_addresses_tuple = tuple(bad_addresses)
+    if bad_addresses:
+        bad_addresses_tuple = tuple(bad_addresses)
 
-    query = f"""
-            CREATE OR REPLACE TABLE {table} AS
-            SELECT *,
-                    CASE WHEN
-                        ({address_col} in {bad_addresses_tuple}
-                        OR {address_col}_street in {bad_addresses_tuple}) THEN 1
-                    ELSE 0 END as skip_address
-            from {table}
-            """
+        query = f"""
+                CREATE OR REPLACE TABLE {table} AS
+                SELECT *,
+                        CASE WHEN
+                            ({address_col} in {bad_addresses_tuple}
+                            OR {address_col}_street in {bad_addresses_tuple}) THEN 1
+                        ELSE 0 END as skip_address
+                from {table}
+                """
 
-    db_conn.execute(query)
+        db_conn.execute(query)
+    else:
+        console.log(f"[yellow] No bad addresses to flag in {table} table for {address_col} column")
 
     return None
 

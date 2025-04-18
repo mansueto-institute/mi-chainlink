@@ -16,6 +16,9 @@ def superfast_tfidf(entity_list: pd.DataFrame, id_col: str = "name_id", entity_c
     # matching
     entity_list = entity_list[~pd.isna(entity_list[entity_col])].reset_index(drop=True)
     company_names = entity_list[entity_col]
+    if len(company_names) < 2:
+        matches_df = pd.DataFrame(columns=["entity_a", "entity_b", "similarity", "id_a", "id_b"])
+        return matches_df
     id_vector = entity_list[id_col]
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names)
