@@ -27,9 +27,11 @@ dependencies = [
     "pyarrow>=19.0.0",
     "python-levenshtein>=0.26.1",
     "pyyaml>=6.0.2",
+    "rich>=14.0.0",
     "scikit-learn>=1.6.1",
     "sparse-dot-topn>=1.1.5",
     "sqlalchemy-mate<=2.0.0.0",
+    "typer>=0.15.2",
     "us>=3.2.0",
     "usaddress>=0.5.11",
     "usaddress-scourgify>=0.6.0",
@@ -60,6 +62,8 @@ dev = [
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
+[project.scripts]
+linkage = "linkage.main:app"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["pyarrow", "python-levenshtein", "sqlalchemy-mate"]
