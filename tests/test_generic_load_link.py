@@ -2,20 +2,23 @@ import os
 
 import duckdb
 import pandas as pd
+import polars as pl
 import pytest
 
-from src.linkage.link.link_generic import (
+from linkage.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from src.linkage.link.link_utils import generate_tfidf_links
-from src.linkage.load.load_utils import (
+from linkage.link.link_utils import generate_tfidf_links
+from linkage.load.load_utils import (
     clean_generic,
     load_to_db,
     update_entity_ids,
 )
+from linkage.main import linkage
+from linkage.utils import validate_config
 
 # add pytest fixture
 
@@ -24,7 +27,7 @@ CONFIG_SIMPLE_1 = {
     "tables": [
         {
             "table_name": "test1",
-            "table_name_path": "data/test1.csv",
+            "table_name_path": "tests/data/test1.csv",
             "id_col": "id",
             "name_cols": ["name"],
             "address_cols": ["address"],
@@ -37,12 +40,16 @@ CONFIG_SIMPLE_2 = {
     "tables": [
         {
             "table_name": "test2",
-            "table_name_path": "data/test2.csv",
+            "table_name_path": "tests/data/test2.csv",
             "id_col": "id",
             "name_cols": ["name"],
             "address_cols": ["address"],
         }
     ],
+}
+CONFIG_SIMPLE = {
+    "options": {"db_path": "tests/db/test_simple.db", "force_db_create": True},
+    "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
 }
 
 CONFIG_SMALL_LLC = {
@@ -72,81 +79,30 @@ CONFIG_SMALL_PARCEL = {
 }
 
 
+def test_validate_simple_schema():
+    assert validate_config(CONFIG_SIMPLE) is True
+
+
 @pytest.fixture
 def make_simple_db():
     if os.path.exists("tests/db/test_simple.db"):
         os.remove("tests/db/test_simple.db")
 
-    file1 = {
-        "table_name": "test1",
-        "table_name_path": "data/test1.csv",
-        "id_col": "id",
-        "name_cols": ["name"],
-        "address_cols": ["address"],
-    }
-
-    file2 = {
-        "table_name": "test2",
-        "table_name_path": "data/test1.csv",
-        "id_col": "id",
-        "name_cols": ["name"],
-        "address_cols": ["address"],
-    }
-
-    df1 = pd.DataFrame({
+    pl.DataFrame({
         "id": ["1", "2", "3", "4"],
         "name": ["Aus St", "Big Calm", "Cool Cool", "Aus St"],
         "address": ["1", "2", "3", "4"],
         "skip_address": [0, 0, 0, 0],
-    })
-    df2 = pd.DataFrame({
+    }).write_csv("tests/data/test1.csv")
+    pl.DataFrame({
         "id": ["5", "6", "7", "8"],
         "name": ["Aus St", "Erie Erie", "Cool Cool", "Good Doom"],
         "address": ["5", "6", "3", "4"],
         "skip_address": [0, 0, 0, 0],
-    })
+    }).write_csv("tests/data/test2.csv")
 
-    df1 = clean_generic(df1, file1)
-
-    df2 = clean_generic(df2, file2)
-
-    db_path = "tests/db/test_simple.db"
-    with duckdb.connect(db_path, read_only=False) as db_conn:
-        load_to_db(df1, "test1", db_conn, "test_simple1")
-
-        load_to_db(df2, "test2", db_conn, "test_simple2")
-
-        all_id_cols = ["name_id", "address_id", "street_id", "street_name_id"]
-
-        for df in [df1, df2]:
-            id_cols = []
-            for col in df.columns:
-                if any(c in col for c in all_id_cols) and "subaddress_identifier" not in col:
-                    id_cols.append(col)
-
-            for col in id_cols:
-                update_entity_ids(df=df, entity_id_col=col, db_conn=db_conn)
-
-    create_within_links(db_path=db_path, schema_config=CONFIG_SIMPLE_1, link_exclusions=[])
-    create_within_links(db_path=db_path, schema_config=CONFIG_SIMPLE_2, link_exclusions=[])
-    create_across_links(
-        db_path=db_path,
-        new_schema=CONFIG_SIMPLE_1,
-        existing_schema=CONFIG_SIMPLE_2,
-        link_exclusions=[],
-    )
-
-    generate_tfidf_links(db_path, table_location="entity.name_similarity")
-
-    create_tfidf_within_links(db_path=db_path, schema_config=CONFIG_SIMPLE_1, link_exclusions=[])
-
-    create_tfidf_within_links(db_path=db_path, schema_config=CONFIG_SIMPLE_2, link_exclusions=[])
-
-    create_tfidf_across_links(
-        db_path=db_path,
-        new_schema=CONFIG_SIMPLE_1,
-        existing_schema=CONFIG_SIMPLE_2,
-        link_exclusions=[],
+    linkage(
+        CONFIG_SIMPLE, probabilistic=True, db_path="tests/db/test_simple.db", config_path="tests/configs/config.yaml"
     )
 
 
@@ -279,12 +235,13 @@ def test_simple_exact_within(make_simple_db):
     # id_1,
     # id_2,
     # test_simple1_test1_name_test_simple1_test1_name_name_match,
+    # test_simple1_test1_address_test_simple1_test1_address_street_fuzzy_match
     # test_simple1_test1_name_test_simple1_test1_name_fuzzy_match,
     # test_simple1_test1_address_test_simple1_test1_address_address_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_match,
     # test_simple1_test1_address_test_simple1_test1_address_unit_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_num_match
-    assert df.shape[1] == 8
+    assert df.shape[1] == 9
 
 
 def test_simple_exact_across(make_simple_db):
