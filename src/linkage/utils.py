@@ -117,7 +117,7 @@ def validate_config(config: dict) -> bool:
     try:
         jsonschema.validate(instance=config, schema=schema)
     except jsonschema.exceptions.ValidationError as e:
-        # return ValueError(f"Invalid configuration: {e!s}")
+        return ValueError(f"Invalid configuration: {e!s}")
         return False
     else:  # no exception
         return True
@@ -317,12 +317,14 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     print("Enter the address column(s) (comma separated):")
     address_cols = input().split(",")
 
-    config["schemas"][schema_name]["tables"].append({
-        "table_name": table_name,
-        "table_name_path": table_name_path,
-        "id_col": id_col,
-        "name_cols": name_cols,
-        "address_cols": address_cols,
-    })
+    for idx, schema in enumerate(config["schemas"]):
+        if schema["schema_name"] == schema_name:
+            config["schemas"][idx]["tables"].append({
+                "table_name": table_name,
+                "table_name_path": table_name_path,
+                "id_col": id_col,
+                "name_cols": name_cols,
+                "address_cols": address_cols,
+            })
 
     return config
