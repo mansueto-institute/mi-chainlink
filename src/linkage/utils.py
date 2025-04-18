@@ -46,24 +46,6 @@ def load_config(file_path: str) -> dict:
     with open(file_path) as file:
         config = yaml.safe_load(file)
 
-    # create snake case columns
-    for schema in config["schemas"]:
-        for table in schema["tables"]:
-            if table["name_cols"] is not None:
-                table["name_cols_og"] = table["name_cols"]
-                table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
-            else:
-                table["name_cols"] = []
-
-            if table["address_cols"] is not None:
-                table["address_cols_og"] = table["address_cols"]
-                table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
-            else:
-                table["address_cols"] = []
-
-            table["id_col_og"] = table["id_col"]
-            table["id_col"] = table["id_col"].lower().replace(" ", "_")
-
     return config
 
 
@@ -128,7 +110,7 @@ def validate_config(config: dict) -> bool:
         return True
 
 
-def update_config(db_path: str | Path, config: dict) -> None:
+def update_config(db_path: str | Path, config: dict, config_path: str | Path) -> None:
     """
     update config by adding in all existing link columns and last updated time.
     writes config back out to config.yaml
@@ -143,10 +125,13 @@ def update_config(db_path: str | Path, config: dict) -> None:
     for cols in df_db_columns["column_names"].tolist():
         all_links += [col for col in cols if "match" in col]
 
+    if "metadata" not in config:
+        config["metadata"] = {}
+
     config["metadata"]["existing_links"] = all_links
     config["metadata"]["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open("configs/config.yaml", "w+") as f:
+    with open(config_path, "w+") as f:
         yaml.dump(config, f)
 
 

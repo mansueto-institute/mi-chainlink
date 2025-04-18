@@ -25,6 +25,8 @@ def linkage(
     config: dict,
     load_only: bool = False,
     probabilistic: bool = True,
+    db_path: str = DIR / "db/linked.db",
+    config_path: str = DIR / "configs/config.yaml",
 ) -> bool:
     """
     Given a correctly formatted config file,
@@ -36,28 +38,48 @@ def linkage(
     Returns true if the database was created successfully.
     """
 
-    # handle options
-    force_db_create = config["options"]["force_db_create"]
-    db_path = DIR / "db/linked.db"
+    # create snake case columns
+    for schema in config["schemas"]:
+        for table in schema["tables"]:
+            if table["name_cols"] is not None:
+                table["name_cols_og"] = table["name_cols"]
+                table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
+            else:
+                table["name_cols"] = []
 
-    update_config_only = config["options"]["update_config_only"]
+            if table["address_cols"] is not None:
+                table["address_cols_og"] = table["address_cols"]
+                table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
+            else:
+                table["address_cols"] = []
+
+            table["id_col_og"] = table["id_col"]
+            table["id_col"] = table["id_col"].lower().replace(" ", "_")
+
+    # handle options
+    force_db_create = config["options"].get("force_db_create", False)
+
+    update_config_only = config["options"].get("update_config_only", False)
     if update_config_only:
         update_config(db_path, config)
         return True
 
-    bad_address_path = config["options"]["bad_address_path"]
-    try:
-        bad_addresses_df = pd.read_csv(bad_address_path, keep_default_na=False)
-        bad_addresses_df = bad_addresses_df.iloc[:, 0]
-        bad_addresses = bad_addresses_df.tolist()
-        bad_addresses.append(" ")
-        bad_addresses.append("")
-    except Exception:
+    bad_address_path = config["options"].get("bad_address_path", None)
+    if bad_address_path is not None:
+        try:
+            bad_addresses_df = pd.read_csv(bad_address_path, keep_default_na=False)
+            bad_addresses_df = bad_addresses_df.iloc[:, 0]
+            bad_addresses = bad_addresses_df.tolist()
+            bad_addresses.append(" ")
+            bad_addresses.append("")
+        except Exception:
+            bad_addresses = []
+    else:
         bad_addresses = []
 
     # list of link exclusions
 
-    link_exclusions = config["options"]["link_exclusions"]
+    link_exclusions = config["options"].get("link_exclusions", None)
     if not link_exclusions:
         link_exclusions = []
 
@@ -180,9 +202,9 @@ def linkage(
                         link_exclusions=link_exclusions,
                     )
 
-    update_config(db_path, config)
+    update_config(db_path, config, config_path)
 
-    export_tables_flag = config["options"]["export_tables"]
+    export_tables_flag = config["options"].get("export_tables", False)
     if export_tables_flag:
         path = DIR / "data" / "export"
         export_tables(db_path, path)
