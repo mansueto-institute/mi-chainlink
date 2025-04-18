@@ -19,7 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "duckdb>=1.2.0",
-    "fire>=0.7.0",
     "jsonschema>=4.23.0",
     "numpy>=2.0.2",
     "pandas>=2.2.3",

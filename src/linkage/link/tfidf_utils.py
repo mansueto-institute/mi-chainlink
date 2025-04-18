@@ -1,5 +1,4 @@
 import re
-import time
 from pathlib import Path
 
 import duckdb
@@ -8,8 +7,6 @@ import pandas as pd
 import sparse_dot_topn as ct
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from linkage.utils import logger
-
 
 def superfast_tfidf(entity_list: pd.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> list:
     """
@@ -17,32 +14,14 @@ def superfast_tfidf(entity_list: pd.DataFrame, id_col: str = "name_id", entity_c
     """
 
     # matching
-    t0 = time.time()
     entity_list = entity_list[~pd.isna(entity_list[entity_col])].reset_index(drop=True)
     company_names = entity_list[entity_col]
     id_vector = entity_list[id_col]
-    t1 = time.time()
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names)
-    t2 = time.time()
     matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
-    t3 = time.time()
     matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names, id_vector=id_vector)
-    t4 = time.time()
     matches_df = clean_matches(matches_df)
-    t5 = time.time()
-
-    print(f"Time to preprocess: {t1 - t0:.2f} seconds")
-    print(f"Time to vectorize: {t2 - t1:.2f} seconds")
-    print(f"Time to calculate matches: {t3 - t2:.2f} seconds")
-    print(f"Time to get matches: {t4 - t3:.2f} seconds")
-    print(f"Time to clean matches: {t5 - t4:.2f} seconds")
-
-    logger.debug(f"Time to preprocess: {t1 - t0:.2f} seconds")
-    logger.debug(f"Time to vectorize: {t2 - t1:.2f} seconds")
-    logger.debug(f"Time to calculate matches: {t3 - t2:.2f} seconds")
-    logger.debug(f"Time to get matches: {t4 - t3:.2f} seconds")
-    logger.debug(f"Time to clean matches: {t5 - t4:.2f} seconds")
 
     return matches_df
 

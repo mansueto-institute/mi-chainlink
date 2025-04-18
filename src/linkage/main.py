@@ -1,8 +1,9 @@
+import os
 import pathlib
 
 import duckdb
-import fire
 import pandas as pd
+import typer
 
 from linkage.link.link_generic import (
     create_across_links,
@@ -12,10 +13,12 @@ from linkage.link.link_generic import (
 )
 from linkage.link.link_utils import generate_tfidf_links
 from linkage.load.load_generic import load_generic
-from linkage.utils import create_config, export_tables, logger, update_config
+from linkage.utils import console, create_config, export_tables, load_config, logger, update_config
 
 # parent path
 DIR = pathlib.Path(__file__).parent
+
+app = typer.Typer()
 
 
 def linkage(
@@ -100,29 +103,32 @@ def linkage(
     for new_schema in new_schemas:
         schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
-        # load schema
-        load_generic(
-            db_path=db_path,
-            schema_config=schema_config,
-            bad_addresses=bad_addresses,
-        )
+        with console.status(f"[bold yellow] Working on loading {new_schema}") as status:
+            # load schema
+            load_generic(
+                db_path=db_path,
+                schema_config=schema_config,
+                bad_addresses=bad_addresses,
+            )
 
         if not load_only:
             # create exact links
-            create_within_links(
-                db_path=db_path,
-                schema_config=schema_config,
-                link_exclusions=link_exclusions,
-            )
+            with console.status(f"[bold yellow] Working on linking {new_schema}") as status:
+                create_within_links(
+                    db_path=db_path,
+                    schema_config=schema_config,
+                    link_exclusions=link_exclusions,
+                )
 
-    if not load_only:
+    if not load_only and probabilistic:
         #  generate all the fuzzy links and store in entity.name_similarity
         # only if there are new schemas added
         if len(new_schemas) > 0:
-            generate_tfidf_links(db_path, table_location="entity.name_similarity")
-            generate_tfidf_links(
-                db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
-            )
+            with console.status("[bold yellow] Working on fuzzy matching scores") as status:
+                generate_tfidf_links(db_path, table_location="entity.name_similarity")
+                generate_tfidf_links(
+                    db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
+                )
 
         # for across link
         links = []
@@ -133,11 +139,12 @@ def linkage(
             schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
 
             if probabilistic:
-                create_tfidf_within_links(
-                    db_path=db_path,
-                    schema_config=schema_config,
-                    link_exclusions=link_exclusions,
-                )
+                with console.status(f"[bold yellow] Working on fuzzy matching links in {new_schema}") as status:
+                    create_tfidf_within_links(
+                        db_path=db_path,
+                        schema_config=schema_config,
+                        link_exclusions=link_exclusions,
+                    )
 
             # also create across links for each new schema
             existing_schemas = [schema for schema in schemas if schema["schema_name"] != new_schema]
@@ -152,20 +159,26 @@ def linkage(
 
         # across links for each new_schema, link across to all existing entities
         for new_schema_config, existing_schema in links:
-            create_across_links(
-                db_path=db_path,
-                new_schema=new_schema_config,
-                existing_schema=existing_schema,
-                link_exclusions=link_exclusions,
-            )
-
-            if probabilistic:
-                create_tfidf_across_links(
+            with console.status(
+                f"[bold yellow] Working on links between {new_schema_config} and {existing_schema}"
+            ) as status:
+                create_across_links(
                     db_path=db_path,
                     new_schema=new_schema_config,
                     existing_schema=existing_schema,
                     link_exclusions=link_exclusions,
                 )
+
+            if probabilistic:
+                with console.status(
+                    f"[bold yellow] Working on fuzzy links between {new_schema_config} and {existing_schema}"
+                ) as status:
+                    create_tfidf_across_links(
+                        db_path=db_path,
+                        new_schema=new_schema_config,
+                        existing_schema=existing_schema,
+                        link_exclusions=link_exclusions,
+                    )
 
     update_config(db_path, config)
 
@@ -177,9 +190,12 @@ def linkage(
     return True  ## TODO: check if this is true or false
 
 
+@app.command()
 def main(
-    load_only: bool = False,
-    probabilistic: bool = True,
+    config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", exists=True, readable=True),
+    load_only: bool = typer.Option(False, "--load_only", help="Run only loading"),
+    probabilistic: bool = typer.Option(False, "--probabilistic", help="Run probabilistic matching"),
+    dryrun: bool = typer.Option(False, "--dryrun", help="Run in dry-run mode"),
 ) -> None:
     """
     Given a correctly formatted config file,
@@ -187,17 +203,16 @@ def main(
         * create within links for each new schema
         * create across links for each new schema with all existing schemas
 
-
-    Returns true if the database was created successfully.
+    Returns 'True' if the database was created successfully.
     """
-    config = create_config()
+    config = load_config(config) if config is not None and os.path.exists(config) else create_config()
 
     linkage(config, load_only, probabilistic)
 
-    print("Linkage complete, database created")
+    console.print("[green bold] Linkage complete, database created")
     logger.info("Linkage complete, database created")
 
 
 if __name__ == "__main__":
     # arg parser
-    fire.Fire(main)
+    app()

@@ -6,7 +6,7 @@ from linkage.cleaning.cleaning_functions import (
     clean_names,
     clean_zipcode,
 )
-from linkage.utils import check_table_exists
+from linkage.utils import check_table_exists, console
 
 
 def load_to_db(df: pd.DataFrame, table_name: str, db_conn: DuckDBPyConnection, schema: str) -> None:
@@ -74,7 +74,7 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
             raw_address = col + "_raw"
             temp_address = "temp_" + col
-            print(f"Cleaning address column {col}")
+            console.log(f"[yellow] Cleaning address column {col}")
 
             df[raw_address] = df[col]
 
@@ -181,7 +181,7 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
     """
     Flags rows with bad addresses as provided by user
     """
-    print(f"Flagging bad addresses in {table} table")
+    console.log(f"[yellow] Flagging bad addresses in {table} table for {address_col} column")
     bad_addresses_tuple = tuple(bad_addresses)
 
     query = f"""

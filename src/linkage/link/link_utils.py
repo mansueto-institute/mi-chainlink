@@ -6,7 +6,7 @@ import duckdb
 from duckdb import DuckDBPyConnection
 
 from linkage.link.tfidf_utils import database_query, superfast_tfidf
-from linkage.utils import logger
+from linkage.utils import console, logger
 
 
 def execute_match(
@@ -105,7 +105,7 @@ def execute_match(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -369,7 +369,7 @@ def execute_match_unit(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -479,7 +479,7 @@ def execute_match_street_name_and_num(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -506,21 +506,20 @@ def generate_tfidf_links(
     Returns: None
     """
 
-    print("Process started")
+    console.log("[yellow] Process started")
     logger.info("Process started")
 
     # retrieve entity list, print length of dataframe
     entity_list = database_query(db_path, table_name=source_table_name)
-    print(f"Query retrieved {len(entity_list)} rows")
+    console.log(f"[yellow] Query retrieved {len(entity_list)} rows")
     logger.debug(f"Query retrieved {len(entity_list)} rows")
-    print(entity_list.columns)
 
     # returns a pandas df
     entity_col = entity_list.columns[0]
     id_col = entity_list.columns[1]
     matches_df = superfast_tfidf(entity_list, id_col, entity_col)
 
-    print("Fuzzy Matching done")
+    console.log("[yellow] Fuzzy Matching done")
     logger.info("Fuzzy Matching done")
 
     # load back to db
@@ -646,7 +645,7 @@ def execute_fuzzy_link(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(query)
-        print(f"Created {match_name}")
+        console.log(f"[yellow] Created {match_name}")
         logger.debug(f"Created {match_name}")
 
         # fill in zeros
@@ -802,7 +801,7 @@ def execute_address_fuzzy_link(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(query)
-        print(f"Created {match_name}")
+        console.log(f"[yellow] Created {match_name}")
         logger.debug(f"Created {match_name}")
 
         # fill in zeros

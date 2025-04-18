@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import readline  # noqa: F401
 from pathlib import Path
 
 import duckdb
@@ -8,6 +9,10 @@ import jsonschema
 import polars as pl
 import yaml
 from duckdb import DuckDBPyConnection
+from rich.console import Console
+from rich.prompt import Confirm, Prompt
+
+console = Console(color_system="auto")
 
 
 def setup_logger(name: str, log_file: str, level: int | str = logging.DEBUG) -> logging.Logger:
@@ -224,13 +229,16 @@ def create_config() -> dict:
     """
     Helper to create config file from user input if not pre created
     """
-
-    print("Enter config path. Type 'create' if you would you like to create one.")
-    create_config_path = input().strip()
-    if create_config_path.lower() != "create":
+    create_config_path = Prompt.ask(
+        "[green]> Enter config path. [Leave blank if you would you like to create a new one]",
+        default="",
+        show_default=False,
+    )
+    create_config_path = create_config_path.strip()
+    if create_config_path.lower() != "":
         while not os.path.exists(create_config_path):
-            print("Yaml path does not exist. Please enter a valid path:")
-            create_config_path = input().strip()
+            create_config_path = Prompt.ask("[red]> Yaml path does not exist. Please enter a valid path")
+            create_config_path = create_config_path.strip()
 
         config = load_config(create_config_path)
 
@@ -239,7 +247,7 @@ def create_config() -> dict:
                 break
             else:  # invalid config
                 # print(validate_config(config))
-                print("Invalid config. Please enter a valid yaml config:")
+                create_config_path = Prompt.ask("[red]> Invalid config. Please enter a valid yaml config")
                 create_config_path = input().strip()
                 config = load_config(create_config_path)
 
@@ -256,25 +264,24 @@ def create_config() -> dict:
             "schemas": [],
         }
         # build config with user input
-        print("Export tables to parquet after load? (y/n)")
-        export_tables = input().strip().lower()
-        if export_tables == "y":
-            config["options"]["export_tables"] = True
+        config["options"]["export_tables"] = Confirm.ask(
+            "[green]> Export tables to parquet after load?", show_default=True, default=False
+        )
 
-        print("[Optional] Provide path to bad address csv file:")
-        bad_address_path = input().strip()
+        bad_address_path = Prompt.ask(
+            "[dim green]> [Optional] Provide path to bad address csv file", default="", show_default=False
+        )
+        bad_address_path = bad_address_path.strip()
         if bad_address_path:
             while not os.path.exists(bad_address_path):
-                print("Bad address path does not exist. Please enter a valid path or leave blank:")
+                console.print("> Bad address path does not exist. Please enter a valid path or leave blank:")
                 bad_address_path = input().strip()
             config["options"]["bad_address_path"] = bad_address_path
 
-        print("Add a new schema? (y/n)")
-        add_schema = input().strip().lower()
-        while add_schema == "y":
+        add_schema = Confirm.ask("[green]> Add a new schema?", default=True, show_default=True)
+        while add_schema:
             config = add_schema_config(config)
-            print("Add another schema? (y/n)")
-            add_schema = input().strip().lower()
+            add_schema = Confirm.ask("> Add another schema?", default=False, show_default=True)
 
         return config
 
@@ -284,17 +291,14 @@ def add_schema_config(config: dict) -> dict:
     Helper to add a schema to an existing config
     """
 
-    print("Enter the name of the schema:")
-    schema_name = input()
+    schema_name = Prompt.ask("[green]> Enter the name of the schema", default="main")
     config["schemas"].append({"schema_name": schema_name, "tables": []})
     config = add_table_config(config, schema_name)
-    print("Add a table to this schema? (y/n)")
-    add_table = input()
-    while add_table == "y":
+    add_table = Confirm.ask("[green]> Add a table to this schema?", default=True, show_default=True)
+    while add_table:
         config = add_table_config(config, schema_name)
-        print("Add another table to this schema? (y/n)")
-        add_table = input()
-
+        add_table = Confirm.ask("[green]> Add another table to this schema?", default=False, show_default=True)
+    console.print("[green italic]> Schema added successfully!")
     return config
 
 
@@ -303,19 +307,18 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     Helper to add a table to an existing schema
     """
 
-    print("Enter the name of dataset:")
-    table_name = input().lower().replace(" ", "_")
-    print("Enter the path to the dataset:")
-    table_name_path = input()
+    table_name = Prompt.ask("[green]> Enter the name of dataset:", default="dataset", show_default=True)
+    table_name = table_name.lower().replace(" ", "_")
+    table_name_path = Prompt.ask("[green]> Enter the path to the dataset")
     while not os.path.exists(table_name_path):
-        print("Path does not exist. Please enter a valid path:")
-        table_name_path = input()
-    print("Enter the id column of the dataset. Must be unique:")
-    id_col = input()
-    print("Enter the name column(s) (comma separated):")
-    name_cols = input().split(",")
-    print("Enter the address column(s) (comma separated):")
-    address_cols = input().split(",")
+        table_name_path = Prompt.ask("[red]> Path does not exist. Please enter a valid path")
+    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique", default="id", show_default=True)
+    name_cols = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
+    name_cols = [_.strip() for _ in name_cols.split(",")]
+    address_cols = Prompt.ask(
+        "[green]> Enter the address column(s) (comma separated)", default="address", show_default=True
+    )
+    address_cols = [_.strip() for _ in address_cols.split(",")]
 
     for idx, schema in enumerate(config["schemas"]):
         if schema["schema_name"] == schema_name:
