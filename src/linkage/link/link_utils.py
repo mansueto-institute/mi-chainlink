@@ -727,30 +727,30 @@ def execute_address_fuzzy_link(
     left_source AS (
         SELECT {left_ent_id} as {left_entity}_{left_ent_id_rename},
                 {left_address_col}_street_name_id,
-                {left_address_col}_unit_number as {left_unit_num_rename},
-                {left_address_col}_street_pre_directional as {left_directional_rename},
-                {left_address_col}_address_number as {left_address_num_rename},
-                {left_address_col}_postal_code as {left_postal_code_rename}
+                {left_address_col}_unit_number as {left_entity}_{left_unit_num_rename},
+                {left_address_col}_street_pre_directional as {left_entity}_{left_directional_rename},
+                {left_address_col}_address_number as {left_entity}_{left_address_num_rename},
+                {left_address_col}_postal_code as {left_entity}_{left_postal_code_rename}
         FROM {left_entity}.{left_table}
     ),
 
     right_source AS (
         SELECT {right_ent_id} as {right_entity}_{right_ent_id_rename},
                 {right_address_col}_street_name_id,
-                {right_address_col}_unit_number as {right_unit_num_rename},
-                {right_address_col}_street_pre_directional as {right_directional_rename},
-                {right_address_col}_address_number as {right_address_num_rename},
-                {right_address_col}_postal_code as {right_postal_code_rename}
+                {right_address_col}_unit_number as {right_entity}_{right_unit_num_rename},
+                {right_address_col}_street_pre_directional as {right_entity}_{right_directional_rename},
+                {right_address_col}_address_number as {right_entity}_{right_address_num_rename},
+                {right_address_col}_postal_code as {right_entity}_{right_postal_code_rename}
         FROM {right_entity}.{right_table}
     ),
 
     fuzzy_match_1 AS (
         SELECT l.{left_entity}_{left_ent_id_rename},
-               l.{left_unit_num_rename}, l.{left_address_num_rename},
-               l.{left_postal_code_rename}, l.{left_directional_rename},
+               l.{left_entity}_{left_unit_num_rename}, l.{left_entity}_{left_address_num_rename},
+               l.{left_entity}_{left_postal_code_rename}, l.{left_entity}_{left_directional_rename},
                r.{right_entity}_{right_ent_id_rename},
-               r.{right_unit_num_rename}, r.{right_address_num_rename},
-               r.{right_postal_code_rename}, r.{right_directional_rename},
+               r.{right_entity}_{right_unit_num_rename}, r.{right_entity}_{right_address_num_rename},
+               r.{right_entity}_{right_postal_code_rename}, r.{right_entity}_{right_directional_rename},
                m.{match_name}
         FROM   tfidf_matches as m
         INNER JOIN left_source as l
@@ -761,11 +761,11 @@ def execute_address_fuzzy_link(
 
     fuzzy_match_2 AS (
         SELECT l.{left_entity}_{left_ent_id_rename},
-               l.{left_unit_num_rename}, l.{left_address_num_rename},
-               l.{left_postal_code_rename}, l.{left_directional_rename},
+               l.{left_entity}_{left_unit_num_rename}, l.{left_entity}_{left_address_num_rename},
+               l.{left_entity}_{left_postal_code_rename}, l.{left_entity}_{left_directional_rename},
                r.{right_entity}_{right_ent_id_rename},
-               r.{right_unit_num_rename}, r.{right_address_num_rename},
-               r.{right_postal_code_rename}, r.{right_directional_rename},
+               r.{right_entity}_{right_unit_num_rename}, r.{right_entity}_{right_address_num_rename},
+               r.{right_entity}_{right_postal_code_rename}, r.{right_entity}_{right_directional_rename},
                m.{match_name}
         FROM   tfidf_matches as m
         INNER JOIN left_source as l
@@ -782,8 +782,8 @@ def execute_address_fuzzy_link(
               UNION
               SELECT * FROM fuzzy_match_2)
         WHERE {same_condition} AND
-        {left_address_num_rename} = {right_address_num_rename} AND
-        {left_postal_code_rename} = {right_postal_code_rename}
+        {left_entity}_{left_address_num_rename} = {right_entity}_{right_address_num_rename} AND
+        {left_entity}_{left_postal_code_rename} = {right_entity}_{right_postal_code_rename}
 
     ),
 

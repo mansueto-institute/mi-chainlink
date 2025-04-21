@@ -237,6 +237,7 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
 
     new_entity = schema_config["schema_name"]
     within_entity_across_tables_names = []
+    within_entity_across_tables_addresses = []
     # create fuzzy links
     # generate combos, need all within tables
 
@@ -279,9 +280,14 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
         within_entity_across_tables_names.append([
             (name, table["table_name"], table["id_col"]) for name in table["name_cols"]
         ])
+        within_entity_across_tables_addresses.append([
+            (address, table["table_name"], table["id_col"]) for address in table["address_cols"]
+        ])
 
     # generate combos, across tables within entity
-    across_name_combos, _ = generate_combos_within_across_tables(within_entity_across_tables_names)
+    across_name_combos, across_address_combos = generate_combos_within_across_tables(
+        within_entity_across_tables_names, within_entity_across_tables_addresses
+    )
 
     for left, right in across_name_combos:
         left_name, left_table, left_ent_id = left
@@ -301,6 +307,23 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
             link_exclusions=link_exclusions,
         )
 
+    for left, right in across_address_combos:
+        left_address, left_table, left_ent_id = left
+        right_address, right_table, right_ent_id = right
+        execute_address_fuzzy_link(
+            db_path=db_path,
+            left_entity=new_entity,
+            left_table=left_table,
+            left_ent_id=left_ent_id,
+            left_address_col=left_address,
+            right_entity=new_entity,
+            right_table=right_table,
+            right_ent_id=right_ent_id,
+            right_address_col=right_address,
+            tfidf_table="entity.street_name_similarity",
+            link_exclusions=link_exclusions,
+        )
+
 
 def create_tfidf_across_links(
     db_path: str | Path, new_schema: dict, existing_schema: dict, link_exclusions: list
@@ -314,16 +337,20 @@ def create_tfidf_across_links(
 
     # gather all the name columns for the new entity
     new_entity_names = []
+    new_entity_addresses = []
 
     for table in new_schema["tables"]:
         for name_col in table["name_cols"]:
             new_entity_names.append((table["table_name"], table["id_col"], name_col))
+        for address_col in table["address_cols"]:
+            new_entity_addresses.append((table["table_name"], table["id_col"], address_col))
 
     # go through all the existing entities / schemas
 
     existing_entity = existing_schema["schema_name"]
 
     existing_entity_names = []
+    existing_entity_addresses = []
 
     # gather all the name and address columns for this existing entity
     for table in existing_schema["tables"]:
@@ -332,6 +359,12 @@ def create_tfidf_across_links(
                 table["table_name"],
                 table["id_col"],
                 name_col,
+            ))
+        for address_col in table["address_cols"]:
+            existing_entity_addresses.append((
+                table["table_name"],
+                table["id_col"],
+                address_col,
             ))
     # generate name match combos
 
@@ -352,6 +385,26 @@ def create_tfidf_across_links(
             right_ent_id=right_ent_id,
             right_name_col=right_name,
             tfidf_table="entity.name_similarity",
+            link_exclusions=link_exclusions,
+        )
+
+    # generate address match combos
+    address_combos = list(itertools.product(new_entity_addresses, existing_entity_addresses))
+    for new, old in address_combos:
+        left_table, left_ent_id, left_address = new
+        right_table, right_ent_id, right_address = old
+
+        execute_address_fuzzy_link(
+            db_path=db_path,
+            left_entity=new_entity,
+            left_table=left_table,
+            left_ent_id=left_ent_id,
+            left_address_col=left_address,
+            right_entity=existing_entity,
+            right_table=right_table,
+            right_ent_id=right_ent_id,
+            right_address_col=right_address,
+            tfidf_table="entity.street_name_similarity",
             link_exclusions=link_exclusions,
         )
 
