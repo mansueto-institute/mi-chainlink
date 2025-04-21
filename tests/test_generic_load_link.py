@@ -180,12 +180,13 @@ def test_simple_exact_within(make_simple_db):
     # id_2,
     # test_simple1_test1_name_test_simple1_test1_name_name_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_fuzzy_match
+    # test_simple1_test1_address_test_simple1_test1_address_unit_fuzzy_match
     # test_simple1_test1_name_test_simple1_test1_name_fuzzy_match,
     # test_simple1_test1_address_test_simple1_test1_address_address_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_match,
     # test_simple1_test1_address_test_simple1_test1_address_unit_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_num_match
-    assert df.shape[1] == 9
+    assert df.shape[1] == 10
 
 
 def test_simple_exact_across(make_simple_db):
@@ -202,9 +203,11 @@ def test_simple_exact_across(make_simple_db):
     # test_simple1_test1_name_test_simple2_test2_name_fuzzy_match,
     # test_simple1_test1_address_test_simple2_test2_address_address_match,
     # test_simple1_test1_address_test_simple2_test2_address_street_match,
+    # test_simple1_test1_address_test_simple2_test2_address_street_fuzzy_match,
     # test_simple1_test1_address_test_simple2_test2_address_unit_match,
+    # test_simple1_test1_address_test_simple2_test2_address_unit_fuzzy_match,
     # test_simple1_test1_address_test_simple2_test2_address_street_num_match
-    assert df.shape[1] == 8
+    assert df.shape[1] == 10
 
 
 def test_small_entity_tables(make_small_df):
@@ -235,13 +238,14 @@ def test_small_exact_within(make_small_df):
         # parcel_pin_1,
         # parcel_pin_2,
         # parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_fuzzy_match
+        # parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_unit_match
         # parcel_parcels_name_raw_parcel_parcels_name_raw_fuzzy_match
         # parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match,
         # parcel_parcels_address_parcel_parcels_address_address_match,
         # parcel_parcels_address_parcel_parcels_address_street_match,
         # parcel_parcels_address_parcel_parcels_address_unit_match,
         # parcel_parcels_address_parcel_parcels_address_street_num_match
-        assert df.shape[1] == 9
+        assert df.shape[1] == 10
 
         query = "SELECT * FROM link.parcel_parcel"
         df = db_conn.execute(query).df()
@@ -249,7 +253,7 @@ def test_small_exact_within(make_small_df):
         # one match
         assert df.shape[0] == 1
         # on within fuzzy match
-        assert df.shape[1] == 9
+        assert df.shape[1] == 10
 
 
 def test_small_exact_across(make_small_df):
@@ -269,8 +273,10 @@ def test_small_exact_across(make_small_df):
     # llc_master_address_parcel_parcels_mailing_address_address_match,
     # llc_master_address_parcel_parcels_mailing_address_street_match,
     # llc_master_address_parcel_parcels_mailing_address_unit_match,
+    # llc_master_address_parcel_parcels_mailing_address_street_fuzzy_match,
+    # llc_master_address_parcel_parcels_mailing_address_unit_fuzzy_match,
     # llc_master_address_parcel_parcels_mailing_address_street_num_match
-    assert df.shape[1] == 8
+    assert df.shape[1] == 10
 
 
 def test_small_fuzzy(make_small_df):
