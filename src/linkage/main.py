@@ -23,8 +23,8 @@ app = typer.Typer()
 
 def linkage(
     config: dict,
-    load_only: bool = False,
-    probabilistic: bool = True,
+    load_only: bool | None = None,
+    probabilistic: bool | None = None,
     db_path: str = DIR / "db/linked.db",
     config_path: str = DIR / "configs/config.yaml",
 ) -> bool:
@@ -37,6 +37,10 @@ def linkage(
 
     Returns true if the database was created successfully.
     """
+    if probabilistic is None:
+        probabilistic = config["options"].get("probabilistic", False)
+    if load_only is None:
+        load_only = config["options"].get("load_only", False)
 
     # create snake case columns
     for schema in config["schemas"]:
@@ -61,7 +65,7 @@ def linkage(
 
     update_config_only = config["options"].get("update_config_only", False)
     if update_config_only:
-        update_config(db_path, config)
+        update_config(db_path, config, config_path)
         return True
 
     bad_address_path = config["options"].get("bad_address_path", None)
@@ -215,8 +219,9 @@ def linkage(
 @app.command()
 def main(
     config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", exists=True, readable=True),
-    load_only: bool = typer.Option(False, "--load_only", help="Run only loading"),
-    probabilistic: bool = typer.Option(False, "--probabilistic", help="Run probabilistic matching"),
+    db_path: str = typer.Argument(DIR / "db/linked.db", exists=True, readable=True),
+    load_only: bool = typer.Option(None, "--load_only", help="Run only loading"),
+    probabilistic: bool = typer.Option(None, "--probabilistic", help="Run probabilistic matching"),
     dryrun: bool = typer.Option(False, "--dryrun", help="Run in dry-run mode"),
 ) -> None:
     """
@@ -227,9 +232,8 @@ def main(
 
     Returns 'True' if the database was created successfully.
     """
-    config = load_config(config) if config is not None and os.path.exists(config) else create_config()
-
-    linkage(config, load_only, probabilistic)
+    config_dict = load_config(config) if config is not None and os.path.exists(config) else create_config()
+    linkage(config_dict, load_only, probabilistic, db_path=db_path, config_path=config)
 
     console.print("[green bold] Linkage complete, database created")
     logger.info("Linkage complete, database created")
