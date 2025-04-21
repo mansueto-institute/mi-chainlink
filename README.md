@@ -42,12 +42,18 @@ make install
 ### Command Line Interface
 
 ```bash
-# Run with default settings
-python main.py
+# Run interactive session
+linkage
+
+# Run with path to config yaml
+linkage path/to/config.yaml
+
+# Run with path to config yaml and path to database
+linkage path/to/config.yaml path/to/database.db
 
 # Run with load only (no linking)
-python main.py --load_only=True
+linkage --load_only
 
-# Run without probabilistic matching
-python main.py --probabilistic=False
+# Run with probabilistic matching
+linkage --probabilistic
 ```

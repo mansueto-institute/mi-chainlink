@@ -5,8 +5,8 @@ from typing import Optional
 import duckdb
 from duckdb import DuckDBPyConnection
 
-from src.linkage.link.tfidf_utils import database_query, superfast_tfidf
-from src.linkage.utils import logger
+from linkage.link.tfidf_utils import database_query, superfast_tfidf
+from linkage.utils import console, logger
 
 
 def execute_match(
@@ -105,7 +105,7 @@ def execute_match(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -365,11 +365,11 @@ def execute_match_unit(
         USING({right_entity}_{right_ent_id_edit})
         WHERE unit_1 IS NOT NULL
         AND unit_2 IS NOT NULL
-        AND unit_1 = unit_2;"""
+        AND CAST(unit_1 AS VARCHAR) = CAST(unit_2 AS VARCHAR);"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -479,7 +479,7 @@ def execute_match_street_name_and_num(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
-        print(f"Created {match_name_col}")
+        console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
 
         execute_match_processing(
@@ -497,25 +497,29 @@ def execute_match_street_name_and_num(
 # FUZZY MATCHING UTILS
 
 
-def generate_tfidf_links(db_path: str | Path, table_location: str = "entity.name_similarity") -> None:
+def generate_tfidf_links(
+    db_path: str | Path, table_location: str = "entity.name_similarity", source_table_name: str | None = None
+) -> None:
     """
     create a table of tfidf matches between two entities and adds to db
 
     Returns: None
     """
 
-    print("Process started")
+    console.log("[yellow] Process started")
     logger.info("Process started")
 
     # retrieve entity list, print length of dataframe
-    entity_list = database_query(db_path)
-    print(f"Query retrieved {len(entity_list)} rows")
+    entity_list = database_query(db_path, table_name=source_table_name)
+    console.log(f"[yellow] Query retrieved {len(entity_list)} rows")
     logger.debug(f"Query retrieved {len(entity_list)} rows")
 
     # returns a pandas df
-    matches_df = superfast_tfidf(entity_list)
+    entity_col = entity_list.columns[0]
+    id_col = entity_list.columns[1]
+    matches_df = superfast_tfidf(entity_list, id_col, entity_col)
 
-    print("Fuzzy Matching done")
+    console.log("[yellow] Fuzzy Matching done")
     logger.info("Fuzzy Matching done")
 
     # load back to db
@@ -641,11 +645,178 @@ def execute_fuzzy_link(
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(query)
-        print(f"Created {match_name}")
+        console.log(f"[yellow] Created {match_name}")
         logger.debug(f"Created {match_name}")
 
         # fill in zeros
         db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
+
+    return None
+
+
+def execute_address_fuzzy_link(
+    db_path: str | Path,
+    left_entity: str,
+    left_table: str,
+    left_ent_id: str,
+    left_address_col: str,
+    right_entity: str,
+    right_table: str,
+    right_ent_id: str,
+    right_address_col: str,
+    tfidf_table: str = "link.tfidf_staging",
+    link_exclusions: Optional[list] = None,
+) -> None:
+    """
+    fuzzy address matching
+    """
+    if link_exclusions is None:
+        link_exclusions = []
+
+    link_table = f"link.{left_entity}_{right_entity}"
+
+    # align the names of the match columns
+    left_side = f"{left_entity}_{left_table}_{left_address_col}"
+    right_side = f"{right_entity}_{right_table}_{right_address_col}"
+    match_name_stem = f"{left_side}_{right_side}" if left_side < right_side else f"{right_side}_{left_side}"
+
+    same_condition = "TRUE"
+
+    if left_ent_id == right_ent_id and left_entity == right_entity:
+        left_ent_id_rename = f"{left_ent_id}_1"
+        right_ent_id_rename = f"{right_ent_id}_2"
+        left_unit_num_rename = f"{left_address_col}_unit_number_1"
+        right_unit_num_rename = f"{right_address_col}_unit_number_2"
+        left_address_num_rename = f"{left_address_col}_address_number_1"
+        right_address_num_rename = f"{right_address_col}_address_number_2"
+        left_postal_code_rename = f"{left_address_col}_postal_code_1"
+        right_postal_code_rename = f"{right_address_col}_postal_code_2"
+        left_directional_rename = f"{left_address_col}_street_pre_directional_1"
+        right_directional_rename = f"{right_address_col}_street_pre_directional_2"
+        # if same id, want to remove dupes
+        same_condition = f"{left_entity}_{left_ent_id_rename} < {right_entity}_{right_ent_id_rename}"
+    else:
+        left_ent_id_rename = left_ent_id
+        right_ent_id_rename = right_ent_id
+        left_unit_num_rename = f"{left_address_col}_unit_number"
+        right_unit_num_rename = f"{right_address_col}_unit_number"
+        left_address_num_rename = f"{left_address_col}_address_number"
+        right_address_num_rename = f"{right_address_col}_address_number"
+        left_postal_code_rename = f"{left_address_col}_postal_code"
+        right_postal_code_rename = f"{right_address_col}_postal_code"
+        left_directional_rename = f"{left_address_col}_street_pre_directional"
+        right_directional_rename = f"{right_address_col}_street_pre_directional"
+
+    match_names = [
+        f"{match_name_stem}_street_fuzzy_match",
+        f"{match_name_stem}_unit_fuzzy_match",
+    ]
+
+    conditions = [
+        f"""
+        {left_entity}_{left_address_num_rename} = {right_entity}_{right_address_num_rename} AND
+        {left_entity}_{left_postal_code_rename} = {right_entity}_{right_postal_code_rename}""",
+        f"""
+        {left_entity}_{left_address_num_rename} = {right_entity}_{right_address_num_rename} AND
+        {left_entity}_{left_postal_code_rename} = {right_entity}_{right_postal_code_rename} AND
+        CAST({left_entity}_{left_unit_num_rename} AS VARCHAR) = CAST({right_entity}_{right_unit_num_rename} AS VARCHAR)
+        """,
+    ]
+    for match_name, condition in zip(match_names, conditions):
+        # check link exclusion
+        if any(exclusion in match_name for exclusion in link_exclusions):
+            return None
+        query = f"""
+        CREATE OR REPLACE TABLE {link_table} AS
+
+        WITH tfidf_matches AS (
+            SELECT id_a,
+                id_b,
+                similarity as {match_name}
+            FROM {tfidf_table}
+        ),
+
+        left_source AS (
+            SELECT {left_ent_id} as {left_entity}_{left_ent_id_rename},
+                    {left_address_col}_street_name_id,
+                    {left_address_col}_unit_number as {left_entity}_{left_unit_num_rename},
+                    {left_address_col}_street_pre_directional as {left_entity}_{left_directional_rename},
+                    {left_address_col}_address_number as {left_entity}_{left_address_num_rename},
+                    {left_address_col}_postal_code as {left_entity}_{left_postal_code_rename}
+            FROM {left_entity}.{left_table}
+        ),
+
+        right_source AS (
+            SELECT {right_ent_id} as {right_entity}_{right_ent_id_rename},
+                    {right_address_col}_street_name_id,
+                    {right_address_col}_unit_number as {right_entity}_{right_unit_num_rename},
+                    {right_address_col}_street_pre_directional as {right_entity}_{right_directional_rename},
+                    {right_address_col}_address_number as {right_entity}_{right_address_num_rename},
+                    {right_address_col}_postal_code as {right_entity}_{right_postal_code_rename}
+            FROM {right_entity}.{right_table}
+        ),
+
+        fuzzy_match_1 AS (
+            SELECT l.{left_entity}_{left_ent_id_rename},
+                l.{left_entity}_{left_unit_num_rename}, l.{left_entity}_{left_address_num_rename},
+                l.{left_entity}_{left_postal_code_rename}, l.{left_entity}_{left_directional_rename},
+                r.{right_entity}_{right_ent_id_rename},
+                r.{right_entity}_{right_unit_num_rename}, r.{right_entity}_{right_address_num_rename},
+                r.{right_entity}_{right_postal_code_rename}, r.{right_entity}_{right_directional_rename},
+                m.{match_name}
+            FROM   tfidf_matches as m
+            INNER JOIN left_source as l
+                ON m.id_a = l.{left_address_col}_street_name_id
+            INNER JOIN right_source as r
+                ON m.id_b = r.{right_address_col}_street_name_id
+        ),
+
+        fuzzy_match_2 AS (
+            SELECT l.{left_entity}_{left_ent_id_rename},
+                l.{left_entity}_{left_unit_num_rename}, l.{left_entity}_{left_address_num_rename},
+                l.{left_entity}_{left_postal_code_rename}, l.{left_entity}_{left_directional_rename},
+                r.{right_entity}_{right_ent_id_rename},
+                r.{right_entity}_{right_unit_num_rename}, r.{right_entity}_{right_address_num_rename},
+                r.{right_entity}_{right_postal_code_rename}, r.{right_entity}_{right_directional_rename},
+                m.{match_name}
+            FROM   tfidf_matches as m
+            INNER JOIN left_source as l
+                ON m.id_b = l.{left_address_col}_street_name_id
+            INNER JOIN right_source as r
+                ON m.id_a = r.{right_address_col}_street_name_id
+        ),
+
+        all_fuzzy_matches AS (
+            SELECT {left_entity}_{left_ent_id_rename},
+                    {right_entity}_{right_ent_id_rename},
+                    {match_name}
+            FROM (SELECT * FROM fuzzy_match_1
+                UNION
+                SELECT * FROM fuzzy_match_2)
+            WHERE {same_condition} AND
+            {condition}
+
+        ),
+
+        existing_links AS (
+            SELECT *
+            FROM {link_table}
+        )
+
+        SELECT *
+        FROM   all_fuzzy_matches
+        FULL JOIN existing_links
+            USING({left_entity}_{left_ent_id_rename},{right_entity}_{right_ent_id_rename})
+
+        """
+
+        with duckdb.connect(database=db_path, read_only=False) as db_conn:
+            db_conn.execute(query)
+            console.log(f"[yellow] Created {match_name}")
+            logger.debug(f"Created {match_name}")
+
+            # fill in zeros
+            db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
 
     return None
 

@@ -1,18 +1,17 @@
-import datetime
 import os
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 
-from src.linkage.load.load_utils import (
+from linkage.load.load_utils import (
     clean_generic,
     execute_flag_bad_addresses,
     load_to_db,
     update_entity_ids,
     validate_input_data,
 )
-from src.linkage.utils import logger
+from linkage.utils import console, logger
 
 
 def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) -> None:
@@ -32,7 +31,7 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
     with duckdb.connect(db_path, read_only=False) as conn:
         for table_config in schema_config["tables"]:
             # Read the data
-            print(f"Data: {table_config['table_name']} -- Reading data")
+            console.log(f"[yellow] Data: {table_config['table_name']} -- Reading data")
             logger.info(f"Data: {table_config['table_name']} -- Reading data")
             file_path = table_config.get("table_name_path")
             if not file_path:
@@ -56,14 +55,8 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             validate_input_data(df, table_config)
 
             # Clean the data and create ids
-            print(
-                f"""Data: {table_config["table_name"]} -- Starting cleaning at
-                {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"""
-            )
-            logger.info(
-                f"""Data: {table_config["table_name"]} -- Starting cleaning at
-                {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Starting cleaning""")
+            logger.info(f"""Data: {table_config["table_name"]} -- Starting cleaning""")
 
             all_columns = []
             all_columns.append(table_config["id_col_og"])
@@ -82,7 +75,7 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
                     elif col in table_config["address_cols_og"]:
                         table_config["address_cols_og"].remove(col)
                         table_config["address_cols"].remove(col.lower().replace(" ", "_"))
-                    print(f"Column {col} not found in file {file_path}. Removing from config")
+                    console.log(f"[yellow] Column {col} not found in file {file_path}. Removing from config")
                     logger.debug(f"Column {col} not found in file {file_path}. Removing from config")
 
             # Make headers snake case
@@ -92,10 +85,7 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             df = clean_generic(df, table_config)
 
             # load the data to db
-            print(
-                f"""Data: {table_config["table_name"]} -- Starting load at
-                {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Starting load""")
 
             table_name = table_config["table_name"]
             load_to_db(
@@ -106,14 +96,8 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             )
 
             # add new names to entity_names table
-            print(
-                f"""Data: {table_config["table_name"]} -- Updating entity name tables at
-                {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"""
-            )
-            logger.info(
-                f"""Data: {table_config["table_name"]} -- Updating entity name tables at
-                {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Updating entity name tables""")
+            logger.info(f"""Data: {table_config["table_name"]} -- Updating entity name tables""")
 
             all_id_cols = ["name_id", "address_id", "street_id", "street_name_id"]
 
