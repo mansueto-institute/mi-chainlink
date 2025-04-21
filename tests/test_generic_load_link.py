@@ -1,22 +1,9 @@
 import os
 
 import duckdb
-import pandas as pd
 import polars as pl
 import pytest
 
-from linkage.link.link_generic import (
-    create_across_links,
-    create_tfidf_across_links,
-    create_tfidf_within_links,
-    create_within_links,
-)
-from linkage.link.link_utils import generate_tfidf_links
-from linkage.load.load_utils import (
-    clean_generic,
-    load_to_db,
-    update_entity_ids,
-)
 from linkage.main import linkage
 from linkage.utils import validate_config
 
@@ -57,7 +44,7 @@ CONFIG_SMALL_LLC = {
     "tables": [
         {
             "table_name": "master",
-            "table_name_path": "data/master.csv",
+            "table_name_path": "tests/data/small_llc.csv",
             "id_col": "file_num",
             "name_cols": ["name_raw"],
             "address_cols": ["address"],
@@ -70,12 +57,17 @@ CONFIG_SMALL_PARCEL = {
     "tables": [
         {
             "table_name": "parcels",
-            "table_name_path": "data/parcels.csv",
+            "table_name_path": "tests/data/small_parcel.csv",
             "id_col": "pin",
             "name_cols": ["tax_payer_name"],
             "address_cols": ["mailing_address"],
         }
     ],
+}
+
+CONFIG_SMALL = {
+    "options": {"db_path": "tests/db/test_small.db", "force_db_create": True},
+    "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
 
 
@@ -102,7 +94,10 @@ def make_simple_db():
     }).write_csv("tests/data/test2.csv")
 
     linkage(
-        CONFIG_SIMPLE, probabilistic=True, db_path="tests/db/test_simple.db", config_path="tests/configs/config.yaml"
+        CONFIG_SIMPLE,
+        probabilistic=True,
+        db_path="tests/db/test_simple.db",
+        config_path="tests/configs/config_simple.yaml",
     )
 
 
@@ -112,8 +107,8 @@ def make_small_df():
     if os.path.exists("tests/db/test_small.db"):
         os.remove("tests/db/test_small.db")
 
-    parcel_df = pd.DataFrame({
-        "PIN": [
+    pl.DataFrame({
+        "pin": [
             "20344100300000",
             "24171070561019",
             "25212140150000",
@@ -138,16 +133,9 @@ def make_small_df():
             "8041 SAYRE AVE, BURBANK, IL 60459",
         ],
         "skip_address": [0, 0, 0, 0, 0, 0],
-    })
-    parcel_file = {
-        "table_name": "parcel",
-        "table_name_path": "data/parcel.csv",
-        "id_col": "PIN",
-        "name_cols": ["tax_payer_name"],
-        "address_cols": ["mailing_address"],
-    }
+    }).write_csv("tests/data/small_parcel.csv")
 
-    llc_df = pd.DataFrame({
+    pl.DataFrame({
         "file_num": [
             1338397,
             1127901,
@@ -170,57 +158,13 @@ def make_small_df():
             "1319 E 89TH ST. CHICAGO IL 60638",
         ],
         "skip_address": [0, 0, 0, 0, 0],
-    })
-    llc_file = {
-        "table_name": "master",
-        "table_name_path": "data/llc.csv",
-        "id_col": "file_num",
-        "name_cols": ["name_raw"],
-        "address_cols": ["address"],
-    }
+    }).write_csv("tests/data/small_llc.csv")
 
-    parcel_df = clean_generic(parcel_df, parcel_file)
-    llc_df = clean_generic(llc_df, llc_file)
-
-    db_path = "tests/db/test_small.db"
-
-    with duckdb.connect(db_path, read_only=False) as db_conn:
-        load_to_db(parcel_df, "parcels", db_conn, "parcel")
-        load_to_db(llc_df, "master", db_conn, "llc")
-
-        all_id_cols = ["name_id", "address_id", "street_id", "street_name_id"]
-
-        for df in [parcel_df, llc_df]:
-            id_cols = []
-            for col in df.columns:
-                if any(c in col for c in all_id_cols) and "subaddress_identifier" not in col:
-                    id_cols.append(col)
-
-            for col in id_cols:
-                update_entity_ids(df=df, entity_id_col=col, db_conn=db_conn)
-
-    create_within_links(db_path=db_path, schema_config=CONFIG_SMALL_LLC, link_exclusions=[])
-
-    create_within_links(db_path=db_path, schema_config=CONFIG_SMALL_PARCEL, link_exclusions=[])
-
-    create_across_links(
-        db_path=db_path,
-        new_schema=CONFIG_SMALL_LLC,
-        existing_schema=CONFIG_SMALL_PARCEL,
-        link_exclusions=[],
-    )
-
-    generate_tfidf_links(db_path, table_location="entity.name_similarity")
-
-    create_tfidf_within_links(db_path=db_path, schema_config=CONFIG_SMALL_LLC, link_exclusions=[])
-
-    create_tfidf_within_links(db_path=db_path, schema_config=CONFIG_SMALL_PARCEL, link_exclusions=[])
-
-    create_tfidf_across_links(
-        db_path=db_path,
-        new_schema=CONFIG_SMALL_LLC,
-        existing_schema=CONFIG_SMALL_PARCEL,
-        link_exclusions=[],
+    linkage(
+        CONFIG_SMALL,
+        probabilistic=True,
+        db_path="tests/db/test_small.db",
+        config_path="tests/configs/config_small.yaml",
     )
 
 
@@ -290,13 +234,14 @@ def test_small_exact_within(make_small_df):
 
         # parcel_pin_1,
         # parcel_pin_2,
+        # parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_fuzzy_match
         # parcel_parcels_name_raw_parcel_parcels_name_raw_fuzzy_match
         # parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match,
         # parcel_parcels_address_parcel_parcels_address_address_match,
         # parcel_parcels_address_parcel_parcels_address_street_match,
         # parcel_parcels_address_parcel_parcels_address_unit_match,
         # parcel_parcels_address_parcel_parcels_address_street_num_match
-        assert df.shape[1] == 8
+        assert df.shape[1] == 9
 
         query = "SELECT * FROM link.parcel_parcel"
         df = db_conn.execute(query).df()
@@ -304,7 +249,7 @@ def test_small_exact_within(make_small_df):
         # one match
         assert df.shape[0] == 1
         # on within fuzzy match
-        assert df.shape[1] == 8
+        assert df.shape[1] == 9
 
 
 def test_small_exact_across(make_small_df):
