@@ -1,5 +1,6 @@
 import os
 import pathlib
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -25,8 +26,8 @@ def linkage(
     config: dict,
     load_only: bool | None = None,
     probabilistic: bool | None = None,
-    db_path: str = DIR / "db/linked.db",
-    config_path: str = DIR / "configs/config.yaml",
+    db_path: str | Path = DIR / "db/linked.db",
+    config_path: str | Path = DIR / "configs/config.yaml",
 ) -> bool:
     """
     Given a correctly formatted config file,

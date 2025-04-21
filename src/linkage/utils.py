@@ -104,7 +104,7 @@ def validate_config(config: dict) -> bool:
     try:
         jsonschema.validate(instance=config, schema=schema)
     except jsonschema.exceptions.ValidationError as e:
-        return ValueError(f"Invalid configuration: {e!s}")
+        console.print(f"[bold red]> Invalid configuration: {e!s}")
         return False
     else:  # no exception
         return True
@@ -298,12 +298,12 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     while not os.path.exists(table_name_path):
         table_name_path = Prompt.ask("[red]> Path does not exist. Please enter a valid path")
     id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique", default="id", show_default=True)
-    name_cols = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
-    name_cols = [_.strip() for _ in name_cols.split(",")]
-    address_cols = Prompt.ask(
+    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
+    name_cols = [_.strip() for _ in name_col_str.split(",")]
+    address_col_str = Prompt.ask(
         "[green]> Enter the address column(s) (comma separated)", default="address", show_default=True
     )
-    address_cols = [_.strip() for _ in address_cols.split(",")]
+    address_cols = [_.strip() for _ in address_col_str.split(",")]
 
     for idx, schema in enumerate(config["schemas"]):
         if schema["schema_name"] == schema_name:
