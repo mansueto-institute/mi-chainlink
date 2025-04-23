@@ -32,7 +32,7 @@ def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_c
 
 
 def get_matches_df(
-    sparse_matrix: pl.DataFrame, name_vector: list, entity_list: pl.DataFrame, id_col: str, top: None = None
+    sparse_matrix: np.ndarray, name_vector: list, entity_list: pl.DataFrame, id_col: str, top: None = None
 ) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
@@ -207,6 +207,6 @@ def database_query(db_path: str | Path, table_name: str | None = None, limit: in
 
         # randomized sample for limit
         if limit is not None:
-            entity_list = entity_list.sample(n=limit, random_state=12345)
+            entity_list = entity_list.sample(n=limit)
 
     return entity_list

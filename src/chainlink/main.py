@@ -74,7 +74,7 @@ def chainlink(
     bad_address_path = config["options"].get("bad_address_path", None)
     if bad_address_path is not None:
         try:
-            bad_addresses_df = pl.read_csv(bad_address_path, keep_default_na=False)
+            bad_addresses_df = pl.read_csv(bad_address_path)
             bad_addresses = bad_addresses_df[:, 0].to_list()
         except Exception:
             bad_addresses = []
