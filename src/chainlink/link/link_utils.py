@@ -5,8 +5,8 @@ from typing import Optional
 import duckdb
 from duckdb import DuckDBPyConnection
 
-from linkage.link.tfidf_utils import database_query, superfast_tfidf
-from linkage.utils import console, logger
+from chainlink.link.tfidf_utils import database_query, superfast_tfidf
+from chainlink.utils import console, logger
 
 
 def execute_match(

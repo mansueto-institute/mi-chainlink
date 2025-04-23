@@ -1,7 +1,7 @@
 import itertools
 from pathlib import Path
 
-from linkage.link.link_utils import (
+from chainlink.link.link_utils import (
     execute_address_fuzzy_link,
     execute_fuzzy_link,
     execute_match,

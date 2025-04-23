@@ -1,12 +1,12 @@
 import pandas as pd
 from duckdb import DuckDBPyConnection
 
-from linkage.cleaning.cleaning_functions import (
+from chainlink.cleaning.cleaning_functions import (
     clean_address,
     clean_names,
     clean_zipcode,
 )
-from linkage.utils import check_table_exists, console
+from chainlink.utils import check_table_exists, console
 
 
 def load_to_db(df: pd.DataFrame, table_name: str, db_conn: DuckDBPyConnection, schema: str) -> None:

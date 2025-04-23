@@ -4,8 +4,8 @@ import duckdb
 import polars as pl
 import pytest
 
-from linkage.main import linkage
-from linkage.utils import validate_config
+from chainlink.main import chainlink
+from chainlink.utils import validate_config
 
 # add pytest fixture
 
@@ -93,7 +93,7 @@ def make_simple_db():
         "skip_address": [0, 0, 0, 0],
     }).write_csv("tests/data/test2.csv")
 
-    linkage(
+    chainlink(
         CONFIG_SIMPLE,
         config_path="tests/configs/config_simple.yaml",
     )
@@ -158,7 +158,7 @@ def make_small_df():
         "skip_address": [0, 0, 0, 0, 0],
     }).write_csv("tests/data/small_llc.csv")
 
-    linkage(
+    chainlink(
         CONFIG_SMALL,
         config_path="tests/configs/config_small.yaml",
     )

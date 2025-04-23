@@ -26,7 +26,7 @@ The framework supports incremental updates to an existing database:
 
 ```python
 # First load
-linkage(config)
+chainlink(config)
 
 # Add new data to config
 config["schemas"].append({
@@ -43,5 +43,5 @@ config["schemas"].append({
 })
 
 # Update database with new schema
-linkage(config)
+chainlink(config)
 ```

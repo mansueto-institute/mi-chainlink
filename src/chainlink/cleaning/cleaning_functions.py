@@ -5,19 +5,19 @@ import usaddress
 from scourgify import normalize_address_record
 from uszipcode import SearchEngine
 
-from linkage.cleaning.patterns import (
+from chainlink.cleaning.patterns import (
     abb_patterns as ABB_PATTERNS,
 )
-from linkage.cleaning.patterns import (
+from chainlink.cleaning.patterns import (
     end_of_line_patterns as EOL_PATTERNS,
 )
-from linkage.cleaning.patterns import (
+from chainlink.cleaning.patterns import (
     excluded_patterns as EXCLUDED_PATTERNS,
 )
-from linkage.cleaning.patterns import (
+from chainlink.cleaning.patterns import (
     word_patterns as WORD_PATTERNS,
 )
-from linkage.cleaning.usps_suffixes import suffixes
+from chainlink.cleaning.usps_suffixes import suffixes
 
 engine = SearchEngine()
 zip_cache: dict[str, dict[str, str]] = {}

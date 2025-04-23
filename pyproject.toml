@@ -1,6 +1,6 @@
 [project]
-name = "linkage"
-version = "0.0.2"
+name = "chainlink"
+version = "0.0.3"
 description = "A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques."
 authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart@uchicago.edu" }]
 readme = "README.md"
@@ -10,7 +10,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -38,9 +37,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://asteinhart.github.io/linkage/"
-Repository = "https://github.com/asteinhart/linkage"
-Documentation = "https://asteinhart.github.io/linkage/"
+Homepage = "https://asteinhart.github.io/chainlink/"
+Repository = "https://github.com/mansueto-institute/linkage"
+Documentation = "https://asteinhart.github.io/chainlink/"
 
 [dependency-groups]
 dev = [
@@ -62,7 +61,7 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-linkage = "linkage.main:app"
+chainlink = "chainlink.main:app"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["pyarrow", "python-levenshtein", "sqlalchemy-mate"]

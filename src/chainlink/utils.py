@@ -33,7 +33,7 @@ def setup_logger(name: str, log_file: str, level: int | str = logging.DEBUG) -> 
     return logger
 
 
-logger = setup_logger("linkage", "linkage.log")
+logger = setup_logger("chainlink", "chainlink.log")
 
 
 def load_config(file_path: str) -> dict:

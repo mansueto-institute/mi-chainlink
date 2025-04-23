@@ -68,6 +68,84 @@ wheels = [
 ]
 
 [[package]]
+name = "chainlink"
+version = "0.0.3"
+source = { editable = "." }
+dependencies = [
+    { name = "duckdb" },
+    { name = "jsonschema" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pandas" },
+    { name = "polars" },
+    { name = "pyarrow" },
+    { name = "python-levenshtein" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "scikit-learn" },
+    { name = "sparse-dot-topn" },
+    { name = "sqlalchemy-mate" },
+    { name = "typer" },
+    { name = "us" },
+    { name = "usaddress" },
+    { name = "usaddress-scourgify" },
+    { name = "uszipcode" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "deptry" },
+    { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "ipython", version = "8.34.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "ipython", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "tox-uv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "duckdb", specifier = ">=1.2.0" },
+    { name = "jsonschema", specifier = ">=4.23.0" },
+    { name = "numpy", specifier = ">=2.0.2" },
+    { name = "pandas", specifier = ">=2.2.3" },
+    { name = "polars", specifier = ">=1.22.0" },
+    { name = "pyarrow", specifier = ">=19.0.0" },
+    { name = "python-levenshtein", specifier = ">=0.26.1" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "rich", specifier = ">=14.0.0" },
+    { name = "scikit-learn", specifier = ">=1.6.1" },
+    { name = "sparse-dot-topn", specifier = ">=1.1.5" },
+    { name = "sqlalchemy-mate", specifier = "<=2.0.0.0" },
+    { name = "typer", specifier = ">=0.15.2" },
+    { name = "us", specifier = ">=3.2.0" },
+    { name = "usaddress", specifier = ">=0.5.11" },
+    { name = "usaddress-scourgify", specifier = ">=0.6.0" },
+    { name = "uszipcode", specifier = ">=1.0.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "deptry", specifier = ">=0.22.0" },
+    { name = "ipython", specifier = ">=8.18.1" },
+    { name = "mkdocs", specifier = ">=1.4.2" },
+    { name = "mkdocs-material", specifier = ">=8.5.10" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.1" },
+    { name = "mypy", specifier = ">=0.991" },
+    { name = "pre-commit", specifier = ">=2.20.0" },
+    { name = "pytest", specifier = ">=7.2.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "ruff", specifier = ">=0.9.2" },
+    { name = "tox-uv", specifier = ">=1.11.3" },
+]
+
+[[package]]
 name = "chardet"
 version = "5.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -851,84 +929,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d0/becedec0d9c74ae725058a66760740bc96beb572723ba6db4c6028a017ee/levenshtein-0.26.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9d87215113259efdca8716e53b6d59ab6d6009e119d95d45eccc083148855f33", size = 161030 },
     { url = "https://files.pythonhosted.org/packages/c9/ba/6a91218efcbc2b4fdc6567db802473eca14c6d3612e303c296124edb7fa3/levenshtein-0.26.1-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:18f00a3eebf68a82fb651d8d0e810c10bfaa60c555d21dde3ff81350c74fb4c2", size = 246542 },
     { url = "https://files.pythonhosted.org/packages/94/60/04282db259ec806f1c0f098f6b34ac5832e702dd746780f4b90050138ec8/levenshtein-0.26.1-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:b3554c1b59de63d05075577380340c185ff41b028e541c0888fddab3c259a2b4", size = 95980 },
-]
-
-[[package]]
-name = "linkage"
-version = "0.0.2"
-source = { editable = "." }
-dependencies = [
-    { name = "duckdb" },
-    { name = "jsonschema" },
-    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "pandas" },
-    { name = "polars" },
-    { name = "pyarrow" },
-    { name = "python-levenshtein" },
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "scikit-learn" },
-    { name = "sparse-dot-topn" },
-    { name = "sqlalchemy-mate" },
-    { name = "typer" },
-    { name = "us" },
-    { name = "usaddress" },
-    { name = "usaddress-scourgify" },
-    { name = "uszipcode" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "deptry" },
-    { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "ipython", version = "8.34.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "ipython", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "mkdocs" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "tox-uv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "duckdb", specifier = ">=1.2.0" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "numpy", specifier = ">=2.0.2" },
-    { name = "pandas", specifier = ">=2.2.3" },
-    { name = "polars", specifier = ">=1.22.0" },
-    { name = "pyarrow", specifier = ">=19.0.0" },
-    { name = "python-levenshtein", specifier = ">=0.26.1" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "rich", specifier = ">=14.0.0" },
-    { name = "scikit-learn", specifier = ">=1.6.1" },
-    { name = "sparse-dot-topn", specifier = ">=1.1.5" },
-    { name = "sqlalchemy-mate", specifier = "<=2.0.0.0" },
-    { name = "typer", specifier = ">=0.15.2" },
-    { name = "us", specifier = ">=3.2.0" },
-    { name = "usaddress", specifier = ">=0.5.11" },
-    { name = "usaddress-scourgify", specifier = ">=0.6.0" },
-    { name = "uszipcode", specifier = ">=1.0.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "deptry", specifier = ">=0.22.0" },
-    { name = "ipython", specifier = ">=8.18.1" },
-    { name = "mkdocs", specifier = ">=1.4.2" },
-    { name = "mkdocs-material", specifier = ">=8.5.10" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.1" },
-    { name = "mypy", specifier = ">=0.991" },
-    { name = "pre-commit", specifier = ">=2.20.0" },
-    { name = "pytest", specifier = ">=7.2.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0" },
-    { name = "ruff", specifier = ">=0.9.2" },
-    { name = "tox-uv", specifier = ">=1.11.3" },
 ]
 
 [[package]]

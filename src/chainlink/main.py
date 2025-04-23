@@ -6,15 +6,15 @@ import duckdb
 import pandas as pd
 import typer
 
-from linkage.link.link_generic import (
+from chainlink.link.link_generic import (
     create_across_links,
     create_tfidf_across_links,
     create_tfidf_within_links,
     create_within_links,
 )
-from linkage.link.link_utils import generate_tfidf_links
-from linkage.load.load_generic import load_generic
-from linkage.utils import console, create_config, export_tables, load_config, logger, update_config
+from chainlink.link.link_utils import generate_tfidf_links
+from chainlink.load.load_generic import load_generic
+from chainlink.utils import console, create_config, export_tables, load_config, logger, update_config
 
 # parent path
 DIR = pathlib.Path(__file__).parent
@@ -24,7 +24,7 @@ app = typer.Typer()
 app = typer.Typer()
 
 
-def linkage(
+def chainlink(
     config: dict,
     config_path: str | Path = DIR / "configs/config.yaml",
 ) -> bool:
@@ -216,7 +216,7 @@ def linkage(
 
 
 @app.command()
-def main(config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", exists=True, readable=True)) -> None:
+def main(config: str = typer.Argument(DIR / "config" / "chainlink_config.yaml", exists=True, readable=True)) -> None:
     """
     Given a correctly formatted config file,
         * load in any schemas in the config that are not already in the database
@@ -226,10 +226,10 @@ def main(config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", ex
     Returns 'True' if the database was created successfully.
     """
     config_dict = load_config(config) if config is not None and os.path.exists(config) else create_config()
-    linkage(config_dict, config_path=config)
+    chainlink(config_dict, config_path=config)
 
-    console.print("[green bold] Linkage complete, database created")
-    logger.info("Linkage complete, database created")
+    console.print("[green bold] chainlink complete, database created")
+    logger.info("chainlink complete, database created")
 
 
 if __name__ == "__main__":

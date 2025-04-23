@@ -1,4 +1,4 @@
-# linkage
+# chainlink
 
 A powerful, flexible framework for entity resolution and record linkage using DuckDB as the database engine built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/cmdkev), [Ana (Anita) Restrepo Lachman](https://github.com/anitarestrepo16), [Caitlin P.](https://github.com/CaitlinCP), [Joaquin Pinto](https://github.com/joaquinpinto), and [Divij Sinha](https://github.com/divij-sinha). 
 
@@ -43,17 +43,8 @@ make install
 
 ```bash
 # Run interactive session
-linkage
+chainlink
 
 # Run with path to config yaml
-linkage path/to/config.yaml
-
-# Run with path to config yaml and path to database
-linkage path/to/config.yaml path/to/database.db
-
-# Run with load only (no linking)
-linkage --load_only
-
-# Run with probabilistic matching
-linkage --probabilistic
+chainlink path/to/config.yaml
 ```

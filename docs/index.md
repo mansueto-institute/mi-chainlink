@@ -1,4 +1,4 @@
-# linkage
+# chainlink
 
 A powerful, flexible framework for entity resolution and record linkage using DuckDB as the database engine built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/jamesturk), [Ana (Anita) Restrepo Lachman](https://github.com/johnketchum), [Caitlin P.](https://github.com/johnketchum), [Joaquin Pinto](https://github.com/johnketchum), and [Divij Sinha](https://github.com/johnketchum). 
 
@@ -55,7 +55,7 @@ python main.py --probabilistic=False
 
 ## Configuration
 
-The framework uses YAML configuration files to define data sources and linking parameters. See a template file in `linkage/configs/config_template.yaml`. Here's an example configuration:
+The framework uses YAML configuration files to define data sources and linking parameters. See a template file in `chainlink/configs/config_template.yaml`. Here's an example configuration:
 
 ```yaml
 options:
