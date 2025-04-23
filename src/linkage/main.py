@@ -226,7 +226,7 @@ def main(config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", ex
     Returns 'True' if the database was created successfully.
     """
     config_dict = load_config(config) if config is not None and os.path.exists(config) else create_config()
-    linkage(config_dict, load_only, probabilistic, db_path=db_path, config_path=config)
+    linkage(config_dict, config_path=config)
 
     console.print("[green bold] Linkage complete, database created")
     logger.info("Linkage complete, database created")
