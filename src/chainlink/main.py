@@ -61,6 +61,10 @@ def chainlink(
 
     # handle options
     force_db_create = config["options"].get("force_db_create", False)
+    if force_db_create and os.path.exists(db_path):
+        os.remove(db_path)
+        console.print(f"[red] Removed existing database at {db_path}")
+        logger.info(f"Removed existing database at {db_path}")
 
     update_config_only = config["options"].get("update_config_only", False)
     if update_config_only:
@@ -185,7 +189,7 @@ def chainlink(
         # across links for each new_schema, link across to all existing entities
         for new_schema_config, existing_schema in links:
             with console.status(
-                f"[bold yellow] Working on links between {new_schema_config} and {existing_schema}"
+                f"[bold yellow] Working on links between {new_schema_config['schema_name']} and {existing_schema['schema_name']}"
             ) as status:
                 create_across_links(
                     db_path=db_path,
@@ -196,7 +200,7 @@ def chainlink(
 
             if probabilistic:
                 with console.status(
-                    f"[bold yellow] Working on fuzzy links between {new_schema_config} and {existing_schema}"
+                    f"[bold yellow] Working on fuzzy links between {new_schema_config['schema_name']} and {existing_schema['schema_name']}"
                 ) as status:
                     create_tfidf_across_links(
                         db_path=db_path,
