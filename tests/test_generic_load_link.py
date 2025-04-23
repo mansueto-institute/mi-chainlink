@@ -35,7 +35,7 @@ CONFIG_SIMPLE_2 = {
     ],
 }
 CONFIG_SIMPLE = {
-    "options": {"db_path": "tests/db/test_simple.db", "force_db_create": True},
+    "options": {"db_path": "tests/db/test_simple.db", "force_db_create": True, "probabilistic": True},
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
 }
 
@@ -66,7 +66,7 @@ CONFIG_SMALL_PARCEL = {
 }
 
 CONFIG_SMALL = {
-    "options": {"db_path": "tests/db/test_small.db", "force_db_create": True},
+    "options": {"db_path": "tests/db/test_small.db", "force_db_create": True, "probabilistic": True},
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
 
@@ -95,8 +95,6 @@ def make_simple_db():
 
     linkage(
         CONFIG_SIMPLE,
-        probabilistic=True,
-        db_path="tests/db/test_simple.db",
         config_path="tests/configs/config_simple.yaml",
     )
 
@@ -162,8 +160,6 @@ def make_small_df():
 
     linkage(
         CONFIG_SMALL,
-        probabilistic=True,
-        db_path="tests/db/test_small.db",
         config_path="tests/configs/config_small.yaml",
     )
 
