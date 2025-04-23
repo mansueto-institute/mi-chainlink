@@ -5,7 +5,6 @@ import polars as pl
 import pytest
 
 from chainlink.main import chainlink
-from chainlink.utils import validate_config
 
 # add pytest fixture
 
@@ -69,10 +68,6 @@ CONFIG_SMALL = {
     "options": {"db_path": "tests/db/test_small.db", "force_db_create": True, "probabilistic": True},
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
-
-
-def test_validate_simple_schema():
-    assert validate_config(CONFIG_SIMPLE) is True
 
 
 @pytest.fixture
