@@ -195,10 +195,15 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
                 from {table}
                 """
 
-        db_conn.execute(query)
     else:
+        query = f"""
+            CREATE OR REPLACE TABLE {table} AS
+            SELECT *, 0 as {address_col}_skip
+            from {table}
+            """
         console.log(f"[yellow] No bad addresses to flag in {table} table for {address_col} column")
 
+    db_conn.execute(query)
     return None
 
 
