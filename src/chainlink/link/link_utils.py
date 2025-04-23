@@ -36,10 +36,6 @@ def execute_match(
     if link_exclusions is None:
         link_exclusions = []
 
-    address_condition = "TRUE"
-    if skip_address:
-        address_condition = "skip_address != 1"
-
     # if two different ids just dont want duplicates
     matching_condition = "!="
 
@@ -66,6 +62,14 @@ def execute_match(
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
+    if skip_address:
+        address_condition = " != 1"
+        left_address_condition = f"{left_matching_col}_skip {address_condition}"
+        right_address_condition = f"{right_matching_col}_skip {address_condition}"
+    else:
+        left_address_condition = "TRUE"
+        right_address_condition = "TRUE"
+
     temp_table = match_name_col + "_table"
 
     matching_query = f"""
@@ -78,7 +82,7 @@ def execute_match(
                         {left_matching_id}
                 FROM {left_entity}.{left_table}
                 WHERE {left_matching_id} IS NOT NULL
-                AND {address_condition}
+                AND {left_address_condition}
                 )
 
             , rhs AS (
@@ -86,7 +90,7 @@ def execute_match(
                         {right_matching_id}
                 FROM {right_entity}.{right_table}
                 WHERE {right_matching_id} IS NOT NULL
-                AND {address_condition}
+                AND {right_address_condition}
                 )
 
             , final as (
@@ -301,10 +305,6 @@ def execute_match_unit(
     if link_exclusions is None:
         link_exclusions = []
 
-    address_condition = "TRUE"
-    if skip_address:
-        address_condition = "skip_address != 1"
-
     # if same id, only want one direction of matches
     if left_ent_id == right_ent_id and left_entity == right_entity:
         left_ent_id_edit = f"{left_ent_id}_1"
@@ -327,6 +327,14 @@ def execute_match_unit(
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
+    if skip_address:
+        address_condition = " != 1"
+        left_address_condition = f"{left_address}_skip {address_condition}"
+        right_address_condition = f"{right_address}_skip {address_condition}"
+    else:
+        left_address_condition = "TRUE"
+        right_address_condition = "TRUE"
+
     temp_table = match_name_col + "_table"
 
     matching_query = f"""
@@ -344,7 +352,7 @@ def execute_match_unit(
             SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
                     {left_address}_unit_number AS unit_1
             FROM {left_entity}.{left_table}
-            where {address_condition}
+            where {left_address_condition}
 
             )
 
@@ -352,7 +360,7 @@ def execute_match_unit(
             SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
                     {right_address}_unit_number AS unit_2
             FROM {right_entity}.{right_table}
-            where {address_condition}
+            where {right_address_condition}
             )
 
         SELECT {left_entity}_{left_ent_id_edit},
@@ -407,10 +415,6 @@ def execute_match_street_name_and_num(
     if link_exclusions is None:
         link_exclusions = []
 
-    address_condition = "TRUE"
-    if skip_address:
-        address_condition = "skip_address != 1"
-
     # if two different ids just dont want duplicates
     matching_condition = "!="
 
@@ -436,6 +440,14 @@ def execute_match_street_name_and_num(
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
+    if skip_address:
+        address_condition = " != 1"
+        left_address_condition = f"{left_address}_skip {address_condition}"
+        right_address_condition = f"{right_address}_skip {address_condition}"
+    else:
+        left_address_condition = "TRUE"
+        right_address_condition = "TRUE"
+
     temp_table = match_name_col + "_table"
 
     matching_query = f"""CREATE OR REPLACE TABLE link.{temp_table} AS
@@ -448,7 +460,7 @@ def execute_match_street_name_and_num(
                 FROM {left_entity}.{left_table}
                 WHERE {left_address}_address_number IS NOT NULL
                 AND {left_address}_street_name_id IS NOT NULL
-                and {address_condition}
+                and {left_address_condition}
             )
 
             , rhs as (
@@ -459,7 +471,7 @@ def execute_match_street_name_and_num(
                 FROM {right_entity}.{right_table}
                 WHERE {right_address}_address_number IS NOT NULL
                 AND {right_address}_street_name_id IS NOT NULL
-                and {address_condition}
+                and {right_address_condition}
             )
 
             ,final as (
@@ -665,6 +677,7 @@ def execute_address_fuzzy_link(
     right_ent_id: str,
     right_address_col: str,
     tfidf_table: str = "link.tfidf_staging",
+    skip_address: bool = False,
     link_exclusions: Optional[list] = None,
 ) -> None:
     """
@@ -707,6 +720,14 @@ def execute_address_fuzzy_link(
         left_directional_rename = f"{left_address_col}_street_pre_directional"
         right_directional_rename = f"{right_address_col}_street_pre_directional"
 
+    if skip_address:
+        address_condition = " != 1"
+        left_address_condition = f"{left_address_col}_skip {address_condition}"
+        right_address_condition = f"{right_address_col}_skip {address_condition}"
+    else:
+        left_address_condition = "TRUE"
+        right_address_condition = "TRUE"
+
     match_names = [
         f"{match_name_stem}_street_fuzzy_match",
         f"{match_name_stem}_unit_fuzzy_match",
@@ -744,6 +765,7 @@ def execute_address_fuzzy_link(
                     {left_address_col}_address_number as {left_entity}_{left_address_num_rename},
                     {left_address_col}_postal_code as {left_entity}_{left_postal_code_rename}
             FROM {left_entity}.{left_table}
+            WHERE {left_address_condition}
         ),
 
         right_source AS (
@@ -754,6 +776,7 @@ def execute_address_fuzzy_link(
                     {right_address_col}_address_number as {right_entity}_{right_address_num_rename},
                     {right_address_col}_postal_code as {right_entity}_{right_postal_code_rename}
             FROM {right_entity}.{right_table}
+            WHERE {right_address_condition}
         ),
 
         fuzzy_match_1 AS (

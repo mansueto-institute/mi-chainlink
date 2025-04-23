@@ -191,7 +191,7 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
                         CASE WHEN
                             ({address_col} in {bad_addresses_tuple}
                             OR {address_col}_street in {bad_addresses_tuple}) THEN 1
-                        ELSE 0 END as skip_address
+                        ELSE 0 END as {address_col}_skip
                 from {table}
                 """
 
