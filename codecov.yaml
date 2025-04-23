@@ -1,0 +1,23 @@
+codecov:
+  notify:
+    after_n_builds: 5
+
+coverage:
+  status:
+    project:
+      default:
+        target: 75%
+        threshold: 5%
+        base: auto
+    patch:
+      default:
+        target: 75%
+        threshold: 5%
+
+comment:
+  layout: "reach, diff, files"
+  behavior: default
+  require_changes: true
+
+github_checks:
+  annotations: true
