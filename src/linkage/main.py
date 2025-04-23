@@ -21,12 +21,11 @@ DIR = pathlib.Path(__file__).parent
 
 app = typer.Typer()
 
+app = typer.Typer()
+
 
 def linkage(
     config: dict,
-    load_only: bool | None = None,
-    probabilistic: bool | None = None,
-    db_path: str | Path = DIR / "db/linked.db",
     config_path: str | Path = DIR / "configs/config.yaml",
 ) -> bool:
     """
@@ -38,10 +37,9 @@ def linkage(
 
     Returns true if the database was created successfully.
     """
-    if probabilistic is None:
-        probabilistic = config["options"].get("probabilistic", False)
-    if load_only is None:
-        load_only = config["options"].get("load_only", False)
+    probabilistic = config["options"].get("probabilistic", False)
+    load_only = config["options"].get("load_only", False)
+    db_path = config["options"].get("db_path", DIR / "db/linked.db")
 
     # create snake case columns
     for schema in config["schemas"]:
@@ -218,13 +216,7 @@ def linkage(
 
 
 @app.command()
-def main(
-    config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", exists=True, readable=True),
-    db_path: str = typer.Argument(DIR / "db/linked.db", exists=True, readable=True),
-    load_only: bool = typer.Option(None, "--load_only", help="Run only loading"),
-    probabilistic: bool = typer.Option(None, "--probabilistic", help="Run probabilistic matching"),
-    dryrun: bool = typer.Option(False, "--dryrun", help="Run in dry-run mode"),
-) -> None:
+def main(config: str = typer.Argument(DIR / "config" / "linkage_config.yaml", exists=True, readable=True)) -> None:
     """
     Given a correctly formatted config file,
         * load in any schemas in the config that are not already in the database
