@@ -112,7 +112,7 @@ metadata:
   - parcel_parcel_property_address_parcel_parcel_property_address_street_match
   - parcel_parcel_property_address_parcel_parcel_property_address_unit_match
   - parcel_parcel_property_address_parcel_parcel_property_address_street_num_match
-  last_updated: '2025-04-21 14:48:23'
+  last_updated: '2025-04-23 17:04:34'
 options:
   bad_address_path: data/bad_addresses.csv
   export_tables: false
@@ -124,6 +124,7 @@ options:
   - corp_presidents_address_corp_presidents_address_street_match
   - corp_presidents_address_corp_presidents_address_unit_match
   - corp_presidents_address_corp_presidents_address_street_num_match
+  probabilistic: true
   update_config_only: false
 schemas:
 - schema_name: llc

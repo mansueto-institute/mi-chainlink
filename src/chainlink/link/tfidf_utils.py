@@ -3,33 +3,37 @@ from pathlib import Path
 
 import duckdb
 import numpy as np
-import pandas as pd
+import polars as pl
 import sparse_dot_topn as ct
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def superfast_tfidf(entity_list: pd.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> list:
+def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> list:
     """
     returns sorted list of top matched names
     """
 
     # matching
-    entity_list = entity_list[~pd.isna(entity_list[entity_col])].reset_index(drop=True)
-    company_names = entity_list[entity_col]
+
+    entity_list = entity_list.filter(~pl.col(entity_col).is_null())
+    company_names = entity_list.select(entity_col).to_series()
     if len(company_names) < 2:
-        matches_df = pd.DataFrame(columns=["entity_a", "entity_b", "similarity", "id_a", "id_b"])
+        matches_df = pl.DataFrame(data={"entity_a": [], "entity_b": [], "similarity": [], "id_a": [], "id_b": []})
         return matches_df
-    id_vector = entity_list[id_col]
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
-    tf_idf_matrix = vectorizer.fit_transform(company_names)
+    tf_idf_matrix = vectorizer.fit_transform(company_names.to_numpy())
     matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
-    matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names, id_vector=id_vector)
+    matches_df = get_matches_df(
+        sparse_matrix=matches, name_vector=company_names.to_numpy(), entity_list=entity_list, id_col=id_col
+    )
     matches_df = clean_matches(matches_df)
 
     return matches_df
 
 
-def get_matches_df(sparse_matrix: pd.DataFrame, name_vector: list, id_vector: list, top: None = None) -> pd.DataFrame:
+def get_matches_df(
+    sparse_matrix: pl.DataFrame, name_vector: list, entity_list: pl.DataFrame, id_col: str, top: None = None
+) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -47,46 +51,54 @@ def get_matches_df(sparse_matrix: pd.DataFrame, name_vector: list, id_vector: li
     entity_a = np.empty([nr_matches], dtype=object)
     entity_b = np.empty([nr_matches], dtype=object)
     similarity = np.zeros(nr_matches)
-    id_a = np.empty([nr_matches], dtype=object)
-    id_b = np.empty([nr_matches], dtype=object)
+    # id_a = np.empty([nr_matches], dtype=np.uint64)
+    # id_b = np.empty([nr_matches], dtype=np.uint64)
 
     for index in range(0, nr_matches):
         entity_a[index] = name_vector[sparserows[index]]
         entity_b[index] = name_vector[sparsecols[index]]
         similarity[index] = sparse_matrix.data[index]
-        id_a[index] = id_vector[sparserows[index]]
-        id_b[index] = id_vector[sparsecols[index]]
+        # id_a[index] = id_vector[int(sparserows[index])]
+        # id_b[index] = id_vector[int(sparsecols[index])]
+
+    # print(id_a)
+    # print(id_b)
+    # print(type(id_a))
 
     data = {
         "entity_a": entity_a,
         "entity_b": entity_b,
         "similarity": similarity,
-        "id_a": id_a,
-        "id_b": id_b,
+        # "id_a": id_a,
+        # "id_b": id_b,
     }
-    return pd.DataFrame(data)
+    df = (
+        pl.DataFrame(data)
+        .join(entity_list, left_on="entity_a", right_on="entity", how="left")
+        .rename({id_col: "id_a"})
+        .join(entity_list, left_on="entity_b", right_on="entity", how="left")
+        .rename({id_col: "id_b"})
+    )
+    return df
 
 
-def clean_matches(matches_df: pd.DataFrame) -> pd.DataFrame:
+def clean_matches(matches_df: pl.DataFrame) -> pl.DataFrame:
     """
     remove self matches and duplicates in match dataframe
 
-    Returns: pd.DataFrame
+    Returns: pl.DataFrame
     """
 
     # create copy to make adjustments
-    matches_df = matches_df.copy()
-
-    # remove self matches
-    matches_df = matches_df[matches_df["id_a"] != matches_df["id_b"]]
-
-    # remove duplicate matches where (A, B) and (B, A) are considered the same
-    matches_df["sorted_pair"] = matches_df.apply(lambda row: tuple(sorted([row["id_a"], row["id_b"]])), axis=1)
-
-    duplicates = matches_df.duplicated(subset="sorted_pair")
-    matches_df = matches_df[~duplicates].reset_index(drop=True)
-    matches_df = matches_df.drop(columns=["sorted_pair"])
-    matches_df = matches_df.sort_values(by="similarity", ascending=False).reset_index(drop=True)
+    # matches_df = matches_df.copy()
+    # remove self matches, duplicates and sort
+    matches_df = (
+        matches_df.filter(pl.col("id_a") != pl.col("id_b"))
+        .with_columns(pl.concat_list(pl.col("id_a", "id_b")).list.sort().alias("sorted_id_pairs"))
+        .unique("sorted_id_pairs")
+        .drop("sorted_id_pairs")
+        .sort("similarity", descending=True)
+    )
 
     return matches_df
 
@@ -173,7 +185,7 @@ def ngrams(string: str, n: int = 3) -> list:
     return ["".join(ngram) for ngram in ngrams]
 
 
-def database_query(db_path: str | Path, table_name: str | None = None, limit: int | None = None) -> pd.DataFrame:
+def database_query(db_path: str | Path, table_name: str | None = None, limit: int | None = None) -> pl.DataFrame:
     """
     queries entities for comparison
     """
@@ -191,7 +203,7 @@ def database_query(db_path: str | Path, table_name: str | None = None, limit: in
         """
 
         # retreive entity list (all unique names in parcel, llc and corp data
-        entity_list = conn.execute(entity_query).df()
+        entity_list = conn.execute(entity_query).pl()
 
         # randomized sample for limit
         if limit is not None:
