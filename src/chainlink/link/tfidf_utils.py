@@ -5,6 +5,7 @@ import duckdb
 import numpy as np
 import polars as pl
 import sparse_dot_topn as ct
+from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -23,17 +24,13 @@ def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_c
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names.to_numpy())
     matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
-    matches_df = get_matches_df(
-        sparse_matrix=matches, name_vector=company_names.to_numpy(), entity_list=entity_list, id_col=id_col
-    )
+    matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names.to_numpy())
     matches_df = clean_matches(matches_df)
 
     return matches_df
 
 
-def get_matches_df(
-    sparse_matrix: np.ndarray, name_vector: list, entity_list: pl.DataFrame, id_col: str, top: None = None
-) -> pl.DataFrame:
+def get_matches_df(sparse_matrix: csr_matrix, name_vector: list, top: None = None) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -51,33 +48,19 @@ def get_matches_df(
     entity_a = np.empty([nr_matches], dtype=object)
     entity_b = np.empty([nr_matches], dtype=object)
     similarity = np.zeros(nr_matches)
-    # id_a = np.empty([nr_matches], dtype=np.uint64)
-    # id_b = np.empty([nr_matches], dtype=np.uint64)
 
     for index in range(0, nr_matches):
         entity_a[index] = name_vector[sparserows[index]]
         entity_b[index] = name_vector[sparsecols[index]]
         similarity[index] = sparse_matrix.data[index]
-        # id_a[index] = id_vector[int(sparserows[index])]
-        # id_b[index] = id_vector[int(sparsecols[index])]
-
-    # print(id_a)
-    # print(id_b)
-    # print(type(id_a))
 
     data = {
         "entity_a": entity_a,
         "entity_b": entity_b,
         "similarity": similarity,
-        # "id_a": id_a,
-        # "id_b": id_b,
     }
-    df = (
-        pl.DataFrame(data)
-        .join(entity_list, left_on="entity_a", right_on="entity", how="left")
-        .rename({id_col: "id_a"})
-        .join(entity_list, left_on="entity_b", right_on="entity", how="left")
-        .rename({id_col: "id_b"})
+    df = pl.DataFrame(data).with_columns(
+        pl.col("entity_a").hash().alias("id_a"), pl.col("entity_b").hash().alias("id_b")
     )
     return df
 
