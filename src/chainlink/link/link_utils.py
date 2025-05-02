@@ -317,7 +317,7 @@ def execute_match_unit(
 
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_address}"
-    right_side = f"{right_entity}_{right_table}_{left_address}"
+    right_side = f"{right_entity}_{right_table}_{right_address}"
     if left_side < right_side:
         match_name_col = f"{left_side}_{right_side}_unit_match"
     else:
