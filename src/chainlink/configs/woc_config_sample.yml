@@ -18,12 +18,12 @@ metadata:
   - corp_master_name_raw_parcel_parcel_tax_payer_name_name_match
   - corp_presidents_address_parcel_parcel_mailing_address_address_match
   - corp_presidents_address_parcel_parcel_mailing_address_street_match
-  - corp_presidents_address_parcel_parcel_address_unit_match
-  - corp_presidents_address_parcel_parcel_address_street_num_match
+  - corp_presidents_address_parcel_parcel_mailing_address_unit_match
+  - corp_presidents_address_parcel_parcel_mailing_address_street_num_match
   - corp_presidents_address_parcel_parcel_property_address_address_match
   - corp_presidents_address_parcel_parcel_property_address_street_match
-  - corp_presidents_address_parcel_parcel_address_unit_match_1
-  - corp_presidents_address_parcel_parcel_address_street_num_match_1
+  - corp_presidents_address_parcel_parcel_property_address_unit_match
+  - corp_presidents_address_parcel_parcel_property_address_street_num_match
   - corp_presidents_address_llc_managers_address_unit_fuzzy_match
   - corp_presidents_address_llc_managers_address_street_fuzzy_match
   - corp_presidents_address_llc_master_address_unit_fuzzy_match
@@ -82,20 +82,20 @@ metadata:
   - llc_managers_name_raw_parcel_parcel_tax_payer_name_name_match
   - llc_master_address_parcel_parcel_mailing_address_address_match
   - llc_master_address_parcel_parcel_mailing_address_street_match
-  - llc_master_address_parcel_parcel_address_unit_match
-  - llc_master_address_parcel_parcel_address_street_num_match
+  - llc_master_address_parcel_parcel_mailing_address_unit_match
+  - llc_master_address_parcel_parcel_mailing_address_street_num_match
   - llc_master_address_parcel_parcel_property_address_address_match
   - llc_master_address_parcel_parcel_property_address_street_match
-  - llc_master_address_parcel_parcel_address_unit_match_1
-  - llc_master_address_parcel_parcel_address_street_num_match_1
+  - llc_master_address_parcel_parcel_property_address_unit_match
+  - llc_master_address_parcel_parcel_property_address_street_num_match
   - llc_managers_address_parcel_parcel_mailing_address_address_match
   - llc_managers_address_parcel_parcel_mailing_address_street_match
-  - llc_managers_address_parcel_parcel_address_unit_match
-  - llc_managers_address_parcel_parcel_address_street_num_match
+  - llc_managers_address_parcel_parcel_mailing_address_unit_match
+  - llc_managers_address_parcel_parcel_mailing_address_street_num_match
   - llc_managers_address_parcel_parcel_property_address_address_match
   - llc_managers_address_parcel_parcel_property_address_street_match
-  - llc_managers_address_parcel_parcel_address_unit_match_1
-  - llc_managers_address_parcel_parcel_address_street_num_match_1
+  - llc_managers_address_parcel_parcel_property_address_unit_match
+  - llc_managers_address_parcel_parcel_property_address_street_num_match
   - parcel_parcel_mailing_address_parcel_parcel_mailing_address_unit_fuzzy_match
   - parcel_parcel_mailing_address_parcel_parcel_mailing_address_street_fuzzy_match
   - parcel_parcel_tax_payer_name_parcel_parcel_tax_payer_name_fuzzy_match
@@ -106,15 +106,16 @@ metadata:
   - parcel_parcel_mailing_address_parcel_parcel_mailing_address_street_num_match
   - parcel_parcel_mailing_address_parcel_parcel_property_address_address_match
   - parcel_parcel_mailing_address_parcel_parcel_property_address_street_match
-  - parcel_parcel_mailing_address_parcel_parcel_mailing_address_unit_match_1
-  - parcel_parcel_mailing_address_parcel_parcel_mailing_address_street_num_match_1
+  - parcel_parcel_mailing_address_parcel_parcel_property_address_unit_match
+  - parcel_parcel_mailing_address_parcel_parcel_property_address_street_num_match
   - parcel_parcel_property_address_parcel_parcel_property_address_address_match
   - parcel_parcel_property_address_parcel_parcel_property_address_street_match
   - parcel_parcel_property_address_parcel_parcel_property_address_unit_match
   - parcel_parcel_property_address_parcel_parcel_property_address_street_num_match
-  last_updated: '2025-04-21 14:48:23'
+  last_updated: '2025-05-02 13:27:10'
 options:
   bad_address_path: data/bad_addresses.csv
+  db_path: db/linked_debug.db
   export_tables: false
   force_db_create: true
   link_exclusions:
@@ -124,6 +125,7 @@ options:
   - corp_presidents_address_corp_presidents_address_street_match
   - corp_presidents_address_corp_presidents_address_unit_match
   - corp_presidents_address_corp_presidents_address_street_num_match
+  probabilistic: true
   update_config_only: false
 schemas:
 - schema_name: llc
@@ -139,7 +141,7 @@ schemas:
     name_cols_og:
     - name_raw
     table_name: master
-    table_name_path: data/sample_LLC_master_clnd.parquet
+    table_name_path: data/small_sample_LLC_master_clnd.parquet
   - address_cols:
     - address
     address_cols_og:
@@ -151,7 +153,7 @@ schemas:
     name_cols_og:
     - name_raw
     table_name: managers
-    table_name_path: data/sample_LLC_managers_clnd.parquet
+    table_name_path: data/small_sample_LLC_managers_clnd.parquet
 - schema_name: corp
   tables:
   - address_cols:
@@ -165,7 +167,7 @@ schemas:
     name_cols_og:
     - name_raw
     table_name: presidents
-    table_name_path: data/sample_corp_presidents_clnd.parquet
+    table_name_path: data/small_sample_corp_presidents_clnd.parquet
   - address_cols: []
     address_cols_og: []
     id_col: file_num
@@ -175,7 +177,7 @@ schemas:
     name_cols_og:
     - name_raw
     table_name: master
-    table_name_path: data/sample_corp_master_clnd.parquet
+    table_name_path: data/small_sample_corp_master_clnd.parquet
 - schema_name: parcel
   tables:
   - address_cols:
@@ -191,4 +193,4 @@ schemas:
     name_cols_og:
     - tax_payer_name
     table_name: parcel
-    table_name_path: data/sample_parcel-addresses-foia-24-0230.parquet
+    table_name_path: data/small_sample_parcel-addresses-foia-24-0230.parquet
