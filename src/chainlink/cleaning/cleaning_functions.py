@@ -19,7 +19,6 @@ from chainlink.cleaning.patterns import (
 )
 from chainlink.cleaning.usps_suffixes import suffixes
 
-engine = SearchEngine()
 zip_cache: dict[str, dict[str, str]] = {}
 
 state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
@@ -96,6 +95,7 @@ def identify_state_city(zipcode: str) -> tuple:
             return (zip_city, zip_state)
 
         else:
+            engine = SearchEngine()
             zipcode_obj = engine.by_zipcode(int(zipcode))
             # zip_cache[zipcode] = zipcode
 

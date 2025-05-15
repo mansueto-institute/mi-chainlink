@@ -83,12 +83,27 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             temp_address = "temp_" + col
             console.log(f"[yellow] Cleaning address column {col}")
 
-            df = df.with_columns(pl.col(col).alias(raw_address)).with_columns(
-                pl.col(raw_address)
-                .fill_null("")
-                .str.to_uppercase()
-                .map_elements(clean_address, return_dtype=pl.Struct)
-                .alias(temp_address)
+            df = df.with_columns(
+                pl.col(col).alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
+            )
+            df = df.with_columns(
+                pl.col(temp_address).map_elements(
+                    clean_address,
+                    return_dtype=pl.Struct([
+                        pl.Field("address_number", pl.String),
+                        pl.Field("street_pre_directional", pl.String),
+                        pl.Field("street_name", pl.String),
+                        pl.Field("street_post_type", pl.String),
+                        pl.Field("unit_type", pl.String),
+                        pl.Field("unit_number", pl.String),
+                        pl.Field("subaddress_type", pl.String),
+                        pl.Field("subaddress_identifier", pl.String),
+                        pl.Field("city", pl.String),
+                        pl.Field("state", pl.String),
+                        pl.Field("postal_code", pl.String),
+                        pl.Field("street", pl.String),
+                    ]),
+                )
             )
             ta_fields = df[temp_address].struct.fields
             new_fields = [f"{col}_{f}" for f in ta_fields]
