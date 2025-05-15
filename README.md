@@ -48,3 +48,14 @@ chainlink
 # Run with path to config yaml
 chainlink path/to/config.yaml
 ```
+
+```python
+# run as a python function
+
+from chainlink import chainlink
+
+chainlink(
+    config: dict, ## dict with config details
+    config_path: str | Path = DIR / "configs/config.yaml", ## path to store dict post processing
+)
+```
