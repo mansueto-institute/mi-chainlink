@@ -245,10 +245,25 @@ def create_config() -> dict:
                 "update_config_only": False,
                 "link_exclusions": [],
                 "bad_address_path": None,
+                "probabilistic": False,
+                "load_only": False,
             },
             "schemas": [],
         }
         # build config with user input
+        config["options"]["db_path"] = Prompt.ask(
+            "[green]> Enter the path to the resulting database", default="db/linked.db", show_default=True
+        )
+
+        config["options"]["load_only"] = Confirm.ask(
+            "[green]> Only clean and load data to the database (without matching)?", show_default=True, default=False
+        )
+
+        if not config["options"]["load_only"]:
+            config["options"]["probablistic"] = Confirm.ask(
+                "[green]> Run probabilisitic name and address matching?", show_default=True, default=False
+            )
+
         config["options"]["export_tables"] = Confirm.ask(
             "[green]> Export tables to parquet after load?", show_default=True, default=False
         )
