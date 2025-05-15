@@ -127,6 +127,36 @@ def test_clean_address_missing_parts():
         "subaddress_type": None,
     }
 
+    assert clean_address("123 E Hyde Park Blvd # 15") == {
+        "street": "123 E HYDE PARK BLVD",
+        "address_number": "123",
+        "street_pre_directional": "E",
+        "street_name": "HYDE PARK",
+        "street_post_type": "BLVD",
+        "unit_type": "UNIT",
+        "unit_number": "15",
+        "city": None,
+        "state": None,
+        "postal_code": None,
+        "subaddress_identifier": None,
+        "subaddress_type": None,
+    }
+
+    assert clean_address("CHICAGO, IL 60615") == {
+        "street": None,
+        "address_number": None,
+        "street_pre_directional": None,
+        "street_name": None,
+        "street_post_type": None,
+        "unit_type": None,
+        "unit_number": None,
+        "city": "CHICAGO",
+        "state": "IL",
+        "postal_code": "60615",
+        "subaddress_identifier": None,
+        "subaddress_type": None,
+    }
+
 
 def test_clean_address_irregular():
     assert clean_address("US STEEL TWR 600 GRANT 44TH FL PITTSBURGH PA 15219") == {
