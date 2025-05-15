@@ -10,6 +10,7 @@ The framework creates a DuckDB database with the following schema structure:
     - `street`: Unique street information with IDs
     - `street_name`: Unique street names with IDs
     - `name_similarity`: TF-IDF similarity scores between entity names
+    - `street_name_similarity`: TF-IDF similarity scores between entity addresses
 2. **link**: Contains match information between entities
     - `{entity1}_{entity2}`: Links between entities with match scores
 3. **User-defined schemas**: Contains the original data with cleaned fields
@@ -39,6 +40,13 @@ The framework creates a DuckDB database with the following schema structure:
 
 - `entity_a`: First entity name
 - `entity_b`: Second entity name
+- `similarity`: TF-IDF similarity score (0-1)
+- `id_a`: ID of first entity
+- `id_b`: ID of second entity
+
+#### entity.street_name_similarity
+- `entity_a`: First entity address
+- `entity_b`: Second entity address
 - `similarity`: TF-IDF similarity score (0-1)
 - `id_a`: ID of first entity
 - `id_b`: ID of second entity
