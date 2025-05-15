@@ -3,7 +3,7 @@ import pathlib
 from pathlib import Path
 
 import duckdb
-import pandas as pd
+import polars as pl
 import typer
 
 from chainlink.link.link_generic import (
@@ -74,11 +74,8 @@ def chainlink(
     bad_address_path = config["options"].get("bad_address_path", None)
     if bad_address_path is not None:
         try:
-            bad_addresses_df = pd.read_csv(bad_address_path, keep_default_na=False)
-            bad_addresses_df = bad_addresses_df.iloc[:, 0]
-            bad_addresses = bad_addresses_df.tolist()
-            bad_addresses.append(" ")
-            bad_addresses.append("")
+            bad_addresses_df = pl.read_csv(bad_address_path)
+            bad_addresses = bad_addresses_df[:, 0].to_list()
         except Exception:
             bad_addresses = []
     else:
@@ -92,7 +89,7 @@ def chainlink(
 
     # all columns in db to compare against
     with duckdb.connect(database=db_path, read_only=False) as con:
-        df_db_columns = con.sql("show all tables").df()
+        df_db_columns = con.sql("show all tables").pl()
 
     schemas = config["schemas"]
     new_schemas = []

@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 from duckdb import DuckDBPyConnection
 
 from chainlink.cleaning.cleaning_functions import (
@@ -9,7 +9,7 @@ from chainlink.cleaning.cleaning_functions import (
 from chainlink.utils import check_table_exists, console
 
 
-def load_to_db(df: pd.DataFrame, table_name: str, db_conn: DuckDBPyConnection, schema: str) -> None:
+def load_to_db(df: pl.DataFrame, table_name: str, db_conn: DuckDBPyConnection, schema: str) -> None:
     """Loads parquet file into table in database.
 
     Parameters
@@ -39,12 +39,12 @@ def load_to_db(df: pd.DataFrame, table_name: str, db_conn: DuckDBPyConnection, s
     db_conn.execute(query)
 
 
-def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
     """
     Cleans the name and address for a generic file. Appends a new
     column with the cleaned name and address.
 
-    Returns a pd.DataFrame
+    Returns a pl.DataFrame
     """
 
     # Clean the name
@@ -53,19 +53,26 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         col = col.lower().replace(" ", "_")
 
         raw_name = col + "_raw"
+        id_col_name = col + "_name"
+
         # weird case TODO
         if raw_name in df.columns:
-            df.drop(columns=[raw_name], inplace=True)
-        df.rename(columns={col: raw_name}, inplace=True)
-        df.loc[:, col] = df.loc[:, raw_name].fillna("").str.upper().apply(clean_names)
-
-        # create id col
-        id_col_name = col + "_name"
-        df[id_col_name] = df[col]
+            df = df.drop(columns=[raw_name])
+        df = (
+            df.rename({col: raw_name})
+            .with_columns(
+                pl.col(raw_name)
+                .fill_null("")
+                .str.to_uppercase()
+                .map_elements(clean_names, return_dtype=pl.String)
+                .alias(col)
+            )
+            .with_columns(pl.col(col).alias(id_col_name))
+        )
 
         df = create_id_col(df, id_col_name)
+        df = df.drop(id_col_name)
 
-        df.drop(columns=[id_col_name], inplace=True)
     # Clean the address
     if config.get("address_cols"):
         for col in config["address_cols"]:
@@ -76,23 +83,38 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
             temp_address = "temp_" + col
             console.log(f"[yellow] Cleaning address column {col}")
 
-            df[raw_address] = df[col]
-
-            df.loc[:, temp_address] = df.loc[:, raw_address].fillna("").str.upper().apply(clean_address)
-            df.reset_index(drop=True, inplace=True)
-
-            df = pd.merge(
-                df,
-                pd.DataFrame(df.loc[:, temp_address].tolist()).add_prefix(f"{col}_"),
-                left_index=True,
-                right_index=True,
+            df = df.with_columns(
+                pl.col(col).alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
             )
-
-            # clean zipcode
-            df.loc[:, f"{col}_postal_code"] = df.loc[:, f"{col}_postal_code"].astype("str").apply(clean_zipcode)
-
-            # create col for address id
-            df[col + "_address"] = df[raw_address]
+            df = df.with_columns(
+                pl.col(temp_address).map_elements(
+                    clean_address,
+                    return_dtype=pl.Struct([
+                        pl.Field("address_number", pl.String),
+                        pl.Field("street_pre_directional", pl.String),
+                        pl.Field("street_name", pl.String),
+                        pl.Field("street_post_type", pl.String),
+                        pl.Field("unit_type", pl.String),
+                        pl.Field("unit_number", pl.String),
+                        pl.Field("subaddress_type", pl.String),
+                        pl.Field("subaddress_identifier", pl.String),
+                        pl.Field("city", pl.String),
+                        pl.Field("state", pl.String),
+                        pl.Field("postal_code", pl.String),
+                        pl.Field("street", pl.String),
+                    ]),
+                )
+            )
+            ta_fields = df[temp_address].struct.fields
+            new_fields = [f"{col}_{f}" for f in ta_fields]
+            df = (
+                df.with_columns(pl.col(temp_address).struct.rename_fields(new_fields))
+                .unnest(temp_address)
+                .with_columns(
+                    pl.col(f"{col}_postal_code").cast(pl.String).map_elements(clean_zipcode, return_dtype=pl.String),
+                    pl.col(raw_address).alias(col + "_address"),
+                )
+            )
 
             id_cols = ["address", "street", "street_name"]
 
@@ -102,26 +124,27 @@ def clean_generic(df: pd.DataFrame, config: dict) -> pd.DataFrame:
                 df = create_id_col(df, name)
 
         # drop temp cols
-        df = df.drop(columns=[temp_address, col + "_address"])
+        df = df.drop(col + "_address")
     return df
 
 
-def create_id_col(df: pd.DataFrame, col: str) -> pd.DataFrame:
+def create_id_col(df: pl.DataFrame, col: str) -> pl.DataFrame:
     """
-    Adds an id column to the DataFrame using pd.util.hash_array() function
+    Adds an id column to the DataFrame using pl.Series.hash function
 
-    Returns a pd.DataFrame
+    Returns a pl.DataFrame
     """
 
     col_id = col + "_id"
-    df[col_id] = pd.util.hash_array(df[col].to_numpy())
-    # if col is null then make id null
-    df.loc[df[col].isnull(), col_id] = None
+
+    df = df.with_columns(pl.col(col).hash().alias(col_id)).with_columns(
+        pl.when(pl.col(col).is_null()).then(None).otherwise(pl.col(col_id)).alias(col_id).cast(pl.UInt64),
+    )
 
     return df
 
 
-def update_entity_ids(df: pd.DataFrame, entity_id_col: str, db_conn: DuckDBPyConnection) -> None:
+def update_entity_ids(df: pl.DataFrame, entity_id_col: str, db_conn: DuckDBPyConnection) -> None:
     """
     Adds new ids to the entity schema table. If the value is already in the table, it is not added.
 
@@ -207,7 +230,7 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
     return None
 
 
-def validate_input_data(df: pd.DataFrame, table_config: dict) -> None:
+def validate_input_data(df: pl.DataFrame, table_config: dict) -> None:
     """
     Validates input data against configuration requirements
     """
@@ -223,11 +246,11 @@ def validate_input_data(df: pd.DataFrame, table_config: dict) -> None:
         raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
 
     # Check for empty dataframe
-    if df.empty:
+    if df.is_empty():
         raise ValueError("Input data is empty")
 
     # Check for minimum required non-null values
     for col in required_columns:
-        null_count = df[col].isnull().sum()
+        null_count = df.select(pl.col(col).is_null().sum()).item()
         if null_count == len(df):
             raise ValueError(f"Column {col} contains all null values")

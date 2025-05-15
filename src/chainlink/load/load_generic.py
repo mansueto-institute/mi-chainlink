@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import duckdb
-import pandas as pd
+import polars as pl
 
 from chainlink.load.load_utils import (
     clean_generic,
@@ -45,9 +45,13 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
                 raise ValueError(f"Unsupported file format: {file_extension}. Supported formats: csv, parquet")
 
             try:
-                df = pd.read_csv(file_path, dtype="string") if file_extension == "csv" else pd.read_parquet(file_path)
+                df = (
+                    pl.read_csv(file_path, infer_schema=False)
+                    if file_extension == "csv"
+                    else pl.read_parquet(file_path)
+                )
                 # convert all columns to string
-                df = df.astype("string")
+                df = df.cast(pl.String)
 
             except Exception as e:
                 raise Exception(f"Error reading file {file_path}: {e!s}") from None

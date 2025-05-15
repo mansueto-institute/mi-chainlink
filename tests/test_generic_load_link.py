@@ -162,7 +162,7 @@ def make_small_df():
 def test_simple_exact_within(make_simple_db):
     with duckdb.connect("tests/db/test_simple.db", read_only=True) as db_conn:
         query = "SELECT * FROM link.test_simple1_test_simple1"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
     # one match
     assert df.shape[0] == 1
@@ -183,7 +183,7 @@ def test_simple_exact_within(make_simple_db):
 def test_simple_exact_across(make_simple_db):
     with duckdb.connect("tests/db/test_simple.db", read_only=True) as db_conn:
         query = "SELECT * FROM link.test_simple1_test_simple2"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
     # one match
     assert df.shape[0] == 4
@@ -205,15 +205,15 @@ def test_small_entity_tables(make_small_df):
     db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=False) as db_conn:
         query = "SELECT * FROM entity.name"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
         assert df.shape[0] == 7
 
         query = "SELECT * FROM entity.address"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
         assert df.shape[0] == 8
 
         query = "SELECT * FROM entity.street"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
         assert df.shape[0] == 6
 
 
@@ -221,7 +221,7 @@ def test_small_exact_within(make_small_df):
     db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_llc"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
         # one match
         assert df.shape[0] == 1
@@ -239,7 +239,7 @@ def test_small_exact_within(make_small_df):
         assert df.shape[1] == 10
 
         query = "SELECT * FROM link.parcel_parcel"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
         # one match
         assert df.shape[0] == 1
@@ -252,7 +252,7 @@ def test_small_exact_across(make_small_df):
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_parcel"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
     # eight matches
     assert df.shape[0] == 8
@@ -275,8 +275,8 @@ def test_small_fuzzy(make_small_df):
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_parcel"
-        df = db_conn.execute(query).df()
+        df = db_conn.execute(query).pl()
 
     # one fuzzy match
-    df_test = df[df["llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match"] > 0]
+    df_test = df.filter(pl.col("llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match") > 0)
     assert df_test.shape[0] == 1

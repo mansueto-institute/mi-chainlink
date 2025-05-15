@@ -119,10 +119,10 @@ def update_config(db_path: str | Path, config: dict, config_path: str | Path) ->
     """
 
     with duckdb.connect(db_path) as conn:
-        df_db_columns = conn.sql("show all tables").df()
+        df_db_columns = conn.sql("show all tables").pl()
 
     all_links = []
-    for cols in df_db_columns["column_names"].tolist():
+    for cols in df_db_columns["column_names"].to_list():
         all_links += [col for col in cols if "match" in col]
 
     if "metadata" not in config:
