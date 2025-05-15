@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> list:
+def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> pl.DataFrame:
     """
     returns sorted list of top matched names
     """
@@ -30,7 +30,7 @@ def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_c
     return matches_df
 
 
-def get_matches_df(sparse_matrix: csr_matrix, name_vector: list, top: None = None) -> pl.DataFrame:
+def get_matches_df(sparse_matrix: csr_matrix, name_vector: np.ndarray, top: None = None) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references

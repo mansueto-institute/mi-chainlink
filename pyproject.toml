@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "rich>=14.0.0",
     "scikit-learn>=1.6.1",
+    "scipy>=1.15.1",
     "sparse-dot-topn>=1.1.5",
     "sqlalchemy-mate<=2.0.0.0",
     "typer>=0.15.2",
