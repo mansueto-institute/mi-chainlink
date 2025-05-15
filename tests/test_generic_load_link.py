@@ -34,7 +34,11 @@ CONFIG_SIMPLE_2 = {
     ],
 }
 CONFIG_SIMPLE = {
-    "options": {"db_path": "tests/db/test_simple.db", "force_db_create": True, "probabilistic": True},
+    "options": {
+        "db_path": "tests/db/test_simple.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
 }
 
@@ -65,7 +69,11 @@ CONFIG_SMALL_PARCEL = {
 }
 
 CONFIG_SMALL = {
-    "options": {"db_path": "tests/db/test_small.db", "force_db_create": True, "probabilistic": True},
+    "options": {
+        "db_path": "tests/db/test_small.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
 
@@ -203,7 +211,7 @@ def test_simple_exact_across(make_simple_db):
 
 def test_small_entity_tables(make_small_df):
     db_path = "tests/db/test_small.db"
-    with duckdb.connect(db_path, read_only=False) as db_conn:
+    with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM entity.name"
         df = db_conn.execute(query).pl()
         assert df.shape[0] == 7
@@ -223,28 +231,47 @@ def test_small_exact_within(make_small_df):
         query = "SELECT * FROM link.llc_llc"
         df = db_conn.execute(query).pl()
 
+        correct_df = pl.DataFrame({
+            "llc_file_num_1": ["1338397"],
+            "llc_file_num_2": ["325194"],
+            "llc_master_address_llc_master_address_unit_fuzzy_match": [0.0],
+            "llc_master_address_llc_master_address_street_fuzzy_match": [0.0],
+            "llc_master_name_raw_llc_master_name_raw_fuzzy_match": [0.0],
+            "llc_master_name_raw_llc_master_name_raw_name_match": [1],
+            "llc_master_address_llc_master_address_address_match": [0],
+            "llc_master_address_llc_master_address_street_match": [0],
+            "llc_master_address_llc_master_address_unit_match": [0],
+            "llc_master_address_llc_master_address_street_num_match": [0],
+        })
+        # for row in df.rows():
+        #     print(row)
+
         # one match
         assert df.shape[0] == 1
-
-        # parcel_pin_1,
-        # parcel_pin_2,
-        # parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_fuzzy_match
-        # parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_unit_match
-        # parcel_parcels_name_raw_parcel_parcels_name_raw_fuzzy_match
-        # parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match,
-        # parcel_parcels_address_parcel_parcels_address_address_match,
-        # parcel_parcels_address_parcel_parcels_address_street_match,
-        # parcel_parcels_address_parcel_parcels_address_unit_match,
-        # parcel_parcels_address_parcel_parcels_address_street_num_match
         assert df.shape[1] == 10
+        assert correct_df.equals(df)
 
         query = "SELECT * FROM link.parcel_parcel"
         df = db_conn.execute(query).pl()
+
+        correct_df = pl.DataFrame({
+            "parcel_pin_1": ["24171070561019"],
+            "parcel_pin_2": ["25022160020002"],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_unit_fuzzy_match": [0.0],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_fuzzy_match": [0.0],
+            "parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_fuzzy_match": [0.0],
+            "parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match": [None],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_address_match": [1],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_match": [1],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_unit_match": [0],
+            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_num_match": [1],
+        })
 
         # one match
         assert df.shape[0] == 1
         # on within fuzzy match
         assert df.shape[1] == 10
+        assert correct_df.equals(df)
 
 
 def test_small_exact_across(make_small_df):
@@ -254,20 +281,113 @@ def test_small_exact_across(make_small_df):
         query = "SELECT * FROM link.llc_parcel"
         df = db_conn.execute(query).pl()
 
+    correct_df = pl.DataFrame({
+        "llc_file_num": [
+            "325194",
+            "717605",
+            "1127901",
+            "257730",
+            "1338397",
+            "717605",
+            "717605",
+            "257730",
+        ],
+        "parcel_pin": [
+            "25022160020001",
+            "20344100300000",
+            "25212140150000",
+            "25022160020000",
+            "20344100300000",
+            "25022160020002",
+            "24171070561019",
+            "25022160020001",
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_unit_fuzzy_match": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_street_fuzzy_match": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+        "llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.9805094416874218,
+        ],
+        "llc_master_name_raw_parcel_parcels_tax_payer_name_name_match": [
+            None,
+            1,
+            1,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_address_match": [
+            None,
+            0,
+            0,
+            None,
+            1,
+            1,
+            1,
+            None,
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_street_match": [
+            1,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            None,
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_unit_match": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            None,
+        ],
+        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            None,
+        ],
+    })
+
     # eight matches
     assert df.shape[0] == 8
-
-    # llc_file_num,
-    # parcel_pin,
-    # llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match,
-    # llc_master_name_raw_parcel_parcels_tax_payer_name_name_match,
-    # llc_master_address_parcel_parcels_mailing_address_address_match,
-    # llc_master_address_parcel_parcels_mailing_address_street_match,
-    # llc_master_address_parcel_parcels_mailing_address_unit_match,
-    # llc_master_address_parcel_parcels_mailing_address_street_fuzzy_match,
-    # llc_master_address_parcel_parcels_mailing_address_unit_fuzzy_match,
-    # llc_master_address_parcel_parcels_mailing_address_street_num_match
     assert df.shape[1] == 10
+    assert correct_df.sort("llc_file_num").equals(df.sort("llc_file_num"))
 
 
 def test_small_fuzzy(make_small_df):
@@ -277,6 +397,25 @@ def test_small_fuzzy(make_small_df):
         query = "SELECT * FROM link.llc_parcel"
         df = db_conn.execute(query).pl()
 
+    # Create a DataFrame with the test data
+    correct_df = pl.DataFrame({
+        "llc_file_num": ["257730"],
+        "parcel_pin": ["25022160020001"],
+        "llc_master_address_parcel_parcels_mailing_address_unit_fuzzy_match": [0.0],
+        "llc_master_address_parcel_parcels_mailing_address_street_fuzzy_match": [0.0],
+        "llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match": [0.9805094416874218],
+        "llc_master_name_raw_parcel_parcels_tax_payer_name_name_match": [None],
+        "llc_master_address_parcel_parcels_mailing_address_address_match": [None],
+        "llc_master_address_parcel_parcels_mailing_address_street_match": [None],
+        "llc_master_address_parcel_parcels_mailing_address_unit_match": [None],
+        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [None],
+    })
+
     # one fuzzy match
     df_test = df.filter(pl.col("llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match") > 0)
     assert df_test.shape[0] == 1
+    assert df_test.equals(correct_df)
+
+
+def test_download_tables():
+    pass
