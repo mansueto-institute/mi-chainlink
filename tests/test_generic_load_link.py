@@ -5,6 +5,7 @@ import polars as pl
 import pytest
 
 from chainlink.main import chainlink
+from chainlink.utils import export_tables
 
 # add pytest fixture
 
@@ -77,6 +78,40 @@ CONFIG_SMALL = {
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
 
+CONFIG_SMALL_LINK_EXCLUSION = {
+    "options": {
+        "db_path": "tests/db/test_small_link_exclusion.db",
+        "force_db_create": True,
+        "probabilistic": True,
+        "link_exclusions": ["parcel_parcel_tax_payer_name_parcel_parcel_tax_payer_name_name_match"],
+    },
+    "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
+}
+
+
+CONFIG_TWO_COLUMNS_SCHEMA = {
+    "schema_name": "two_columns",
+    "tables": [
+        {
+            "table_name": "test",
+            "table_name_path": "tests/data/two_columns.csv",
+            "id_col": "file_num",
+            "name_cols": ["name", "name2"],
+            "address_cols": ["address", "address2"],
+        }
+    ],
+}
+
+
+CONFIG_TWO_COLUMNS = {
+    "options": {
+        "db_path": "tests/db/test_two_columns.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
+    "schemas": [CONFIG_TWO_COLUMNS_SCHEMA],
+}
+
 
 @pytest.fixture
 def make_simple_db():
@@ -103,7 +138,7 @@ def make_simple_db():
 
 
 @pytest.fixture
-def make_small_df():
+def make_small_db():
     # test_small.db exists, then delete the db
     if os.path.exists("tests/db/test_small.db"):
         os.remove("tests/db/test_small.db")
@@ -167,6 +202,122 @@ def make_small_df():
     )
 
 
+@pytest.fixture
+def make_small_db_link_exclusion():
+    # test_small.db exists, then delete the db
+    if os.path.exists("tests/db/test_small_link_exclusion.db"):
+        os.remove("tests/db/test_small_link_exclusion.db")
+
+    pl.DataFrame({
+        "pin": [
+            "20344100300000",
+            "24171070561019",
+            "25212140150000",
+            "25022160020000",
+            "25022160020001",
+            "25022160020002",
+        ],
+        "tax_payer_name": [
+            "SANJAY PATEL",
+            "GRONKA PROPERTIES INC",
+            "MOBUCASA INC",
+            "TAXPAYER OF",
+            "NAPERVILLE BITES AND SITE , LLC",
+            "TAXPAYER OF",
+        ],
+        "mailing_address": [
+            "645 LEAMINGTON, WILMETTE, IL 60091",
+            "8041 SAYRE AVE, BURBANK, IL 60459",
+            "1212 S NAPER BLVD 119, NAPERVILLE, IL 60540",
+            "1319 E 89TH ST, CHICAGO, IL 60619",
+            "2555 W. 79TH ST. APT 5 CHICAGO IL 60652",
+            "8041 SAYRE AVE, BURBANK, IL 60459",
+        ],
+        "skip_address": [0, 0, 0, 0, 0, 0],
+    }).write_csv("tests/data/small_parcel.csv")
+
+    pl.DataFrame({
+        "file_num": [
+            1338397,
+            1127901,
+            325194,
+            717605,
+            257730,
+        ],
+        "name_raw": [
+            "WOOW HVAC LLC",
+            "MOBUCASA INC",
+            "WOOW HVAC LLC",
+            "SANJAY PATEL",
+            "NAPERVILLE BITES AND SITES , LLC",
+        ],
+        "address": [
+            "645 LEAMINGTON, WILMETTE, IL 60091",
+            "",
+            "2555 W. 79TH ST. CHICAGO IL 60652",
+            "8041 SAYRE AVE, BURBANK, IL 60459",
+            "1319 E 89TH ST. CHICAGO IL 60638",
+        ],
+        "skip_address": [0, 0, 0, 0, 0],
+    }).write_csv("tests/data/small_llc.csv")
+
+    chainlink(
+        CONFIG_SMALL_LINK_EXCLUSION,
+        config_path="tests/configs/config_small_link_exclusions.yaml",
+    )
+
+
+@pytest.fixture
+def make_two_column_db():
+    # if exists, then delete the db
+    if os.path.exists("tests/db/test_two_column.db"):
+        os.remove("tests/db/test_two_column.db")
+
+    pl.DataFrame({
+        "file_num": [
+            "1001",
+            "1002",
+            "1003",
+            "1004",
+            "1005",
+        ],
+        "name": [
+            "SMITH ENTERPRISES",
+            "JOHNSON HOLDINGS LLC",
+            "ANDERSON CONSULTING",
+            "WILSON PROPERTIES",
+            "ANOTHER NAME",
+        ],
+        "name2": [
+            "ROBERT SMITH",
+            "MICHAEL JOHNSON",
+            "JENNIFER ANDERSON",
+            "JOHNSON HOLDINGS LLC",
+            "SARAH TAYLOR",
+        ],
+        "address": [
+            "565 MAIN AVE, CHICAGO, IL 60601",
+            "456 OAK AVE, EVANSTON, IL 60201",
+            "789 PINE BLVD, NAPERVILLE, IL 60540",
+            "321 ELM DR, SKOKIE, IL 60077",
+            "100 MAPLE RD, AURORA, IL 60506",
+        ],
+        "address2": [
+            "100 STATE ST, CHICAGO, IL 60602",
+            "200 LAKE AVE, EVANSTON, IL 60202",
+            "565 MAIN ST, CHICAGO, IL 60601",
+            "400 CENTRAL AVE, SKOKIE, IL 60076",
+            "321 ELM DR, SKOKIE, IL 60077",
+        ],
+        "skip_address": [0, 0, 0, 0, 0],
+    }).write_csv("tests/data/two_columns.csv")
+
+    chainlink(
+        CONFIG_TWO_COLUMNS,
+        config_path="tests/configs/config_two_columns.yaml",
+    )
+
+
 def test_simple_exact_within(make_simple_db):
     with duckdb.connect("tests/db/test_simple.db", read_only=True) as db_conn:
         query = "SELECT * FROM link.test_simple1_test_simple1"
@@ -209,7 +360,7 @@ def test_simple_exact_across(make_simple_db):
     assert df.shape[1] == 10
 
 
-def test_small_entity_tables(make_small_df):
+def test_small_entity_tables(make_small_db):
     db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM entity.name"
@@ -225,7 +376,7 @@ def test_small_entity_tables(make_small_df):
         assert df.shape[0] == 6
 
 
-def test_small_exact_within(make_small_df):
+def test_small_exact_within(make_small_db):
     db_path = "tests/db/test_small.db"
     with duckdb.connect(db_path, read_only=True) as db_conn:
         query = "SELECT * FROM link.llc_llc"
@@ -274,7 +425,7 @@ def test_small_exact_within(make_small_df):
         assert correct_df.equals(df)
 
 
-def test_small_exact_across(make_small_df):
+def test_small_exact_across(make_small_db):
     db_path = "tests/db/test_small.db"
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
@@ -390,7 +541,7 @@ def test_small_exact_across(make_small_df):
     assert correct_df.sort("llc_file_num").equals(df.sort("llc_file_num"))
 
 
-def test_small_fuzzy(make_small_df):
+def test_small_fuzzy(make_small_db):
     db_path = "tests/db/test_small.db"
 
     with duckdb.connect(db_path, read_only=True) as db_conn:
@@ -417,5 +568,44 @@ def test_small_fuzzy(make_small_df):
     assert df_test.equals(correct_df)
 
 
-def test_download_tables():
+def test_small_link_exclusion(make_small_db_link_exclusion):
+    db_path = "tests/db/test_small_link_exclusion.db"
+
+    with duckdb.connect(db_path, read_only=True) as db_conn:
+        query = "SELECT * FROM link.parcel_parcel"
+        df = db_conn.execute(query).pl()
+
+    assert "parcel_tax_payer_name_parcel_parcel_tax_payer_name_name_match" not in df.columns
+
+
+def test_two_columns(make_two_column_db):
+    db_path = "tests/db/test_two_columns.db"
+
+    with duckdb.connect(db_path, read_only=True) as db_conn:
+        query = "SELECT * FROM link.two_columns_two_columns"
+        links = db_conn.execute(query).pl()
+
+        query = "SELECT * FROM two_columns.test"
+        df = db_conn.execute(query).pl()
+
+    # Verify each expected column exists in the DataFrame
+    assert "name" in df.columns
+    assert "name2" in df.columns
+    assert "address" in df.columns
+    assert "address2" in df.columns
+
+    assert links.shape[0] == 3
+
+
+def test_export_tables():
+    # TODO zsh: segmentation fault  pytest -k test_download_tables
+
+    export_tables("tests/db/test_small.db", "tests/export")
+
+    assert pl.scan_parquet("tests/export/link_llc_llc.parquet").collect().shape[0] == 1
+    assert pl.scan_parquet("tests/export/link_llc_parcel.parquet").collect().shape[0] == 8
+    assert pl.scan_parquet("tests/export/link_parcel_parcel.parquet").collect().shape[0] == 1
+
+
+def test_not_force_db():
     pass

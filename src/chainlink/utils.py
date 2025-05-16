@@ -155,16 +155,24 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
             return row["column_names"][0]
 
     with duckdb.connect(db_path) as conn:
-        df_db_columns = conn.sql("show all tables").df()
+        df_db_columns = conn.sql("show all tables").pl()
 
-        df_db_columns["schema_table"] = df_db_columns["schema"] + "." + df_db_columns["name"]
-        df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
+        print(df_db_columns)
 
-        link_filter = (df_db_columns["schema"] == "link") | (df_db_columns["name"] == "name_similarity")
+        # df_db_columns["schema_table"] = (
+        #     df_db_columns["schema"] + "." + df_db_columns["name"]
+        # )
+        # df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
+
+        df_db_columns = df_db_columns.with_columns(
+            schema_table=pl.col("schema") + "." + pl.col("name"),
+            id_col=pl.struct(pl.all()).map_elements(lambda x: find_id_cols(x)),
+        )
+        link_filter = (pl.col("schema") == "link") | (pl.col("name") == "name_similarity")
 
         links_to_export = zip(
-            df_db_columns[link_filter]["schema_table"].tolist(),
-            df_db_columns[link_filter]["id_col"].tolist(),
+            df_db_columns.filter(link_filter)["schema_table"].to_list(),
+            df_db_columns.filter(link_filter)["id_col"].to_list(),
         )
 
         for link in links_to_export:
@@ -175,10 +183,10 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
             d = conn.execute(links_query).pl().cast({link[1][0]: pl.String, link[1][1]: pl.String})
             d.write_parquet(f"{data_path}/{link[0].replace('.', '_')}.parquet")
 
-        main_filter = (df_db_columns["schema"] != "link") & (df_db_columns["name"] != "name_similarity")
+        main_filter = (pl.col("schema") != "link") & (pl.col("name") != "name_similarity")
         main_to_export = zip(
-            df_db_columns[main_filter]["schema_table"].tolist(),
-            df_db_columns[main_filter]["id_col"].tolist(),
+            df_db_columns.filter(main_filter)["schema_table"].to_list(),
+            df_db_columns.filter(main_filter)["id_col"].to_list(),
         )
 
         for table in main_to_export:
@@ -252,24 +260,34 @@ def create_config() -> dict:
         }
         # build config with user input
         config["options"]["db_path"] = Prompt.ask(
-            "[green]> Enter the path to the resulting database", default="db/linked.db", show_default=True
+            "[green]> Enter the path to the resulting database",
+            default="db/linked.db",
+            show_default=True,
         )
 
         config["options"]["load_only"] = Confirm.ask(
-            "[green]> Only clean and load data to the database (without matching)?", show_default=True, default=False
+            "[green]> Only clean and load data to the database (without matching)?",
+            show_default=True,
+            default=False,
         )
 
         if not config["options"]["load_only"]:
             config["options"]["probablistic"] = Confirm.ask(
-                "[green]> Run probabilisitic name and address matching?", show_default=True, default=False
+                "[green]> Run probabilisitic name and address matching?",
+                show_default=True,
+                default=False,
             )
 
         config["options"]["export_tables"] = Confirm.ask(
-            "[green]> Export tables to parquet after load?", show_default=True, default=False
+            "[green]> Export tables to parquet after load?",
+            show_default=True,
+            default=False,
         )
 
         bad_address_path = Prompt.ask(
-            "[dim green]> [Optional] Provide path to bad address csv file", default="", show_default=False
+            "[dim green]> [Optional] Provide path to bad address csv file",
+            default="",
+            show_default=False,
         )
         bad_address_path = bad_address_path.strip()
         if bad_address_path:
@@ -297,7 +315,11 @@ def add_schema_config(config: dict) -> dict:
     add_table = Confirm.ask("[green]> Add a table to this schema?", default=True, show_default=True)
     while add_table:
         config = add_table_config(config, schema_name)
-        add_table = Confirm.ask("[green]> Add another table to this schema?", default=False, show_default=True)
+        add_table = Confirm.ask(
+            "[green]> Add another table to this schema?",
+            default=False,
+            show_default=True,
+        )
     console.print("[green italic]> Schema added successfully!")
     return config
 
@@ -312,11 +334,21 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     table_name_path = Prompt.ask("[green]> Enter the path to the dataset")
     while not os.path.exists(table_name_path):
         table_name_path = Prompt.ask("[red]> Path does not exist. Please enter a valid path")
-    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique", default="id", show_default=True)
-    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
+    id_col = Prompt.ask(
+        "[green]> Enter the id column of the dataset. Must be unique",
+        default="id",
+        show_default=True,
+    )
+    name_col_str = Prompt.ask(
+        "[green]> Enter the name column(s) (comma separated)",
+        default="name",
+        show_default=True,
+    )
     name_cols = [_.strip() for _ in name_col_str.split(",")]
     address_col_str = Prompt.ask(
-        "[green]> Enter the address column(s) (comma separated)", default="address", show_default=True
+        "[green]> Enter the address column(s) (comma separated)",
+        default="address",
+        show_default=True,
     )
     address_cols = [_.strip() for _ in address_col_str.split(",")]
 
