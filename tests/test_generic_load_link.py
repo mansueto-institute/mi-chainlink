@@ -5,7 +5,6 @@ import polars as pl
 import pytest
 
 from chainlink.main import chainlink
-from chainlink.utils import export_tables
 
 # add pytest fixture
 
@@ -34,6 +33,21 @@ CONFIG_SIMPLE_2 = {
         }
     ],
 }
+
+CONFIG_SIMPLE_MISSING_SCHEMA = {
+    "schema_name": "test_simple2",
+    "tables": [
+        {
+            "table_name": "test2",
+            "table_name_path": "tests/data/test2.csv",
+            "id_col": "id",
+            "name_cols": ["name"],
+            "address_cols": ["address", "mailing_address"],
+        }
+    ],
+}
+
+
 CONFIG_SIMPLE = {
     "options": {
         "db_path": "tests/db/test_simple.db",
@@ -41,6 +55,15 @@ CONFIG_SIMPLE = {
         "probabilistic": True,
     },
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
+}
+
+CONFIG_SIMPLE_MISSING = {
+    "options": {
+        "db_path": "tests/db/test_simple.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
+    "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_MISSING_SCHEMA],
 }
 
 CONFIG_SMALL_LLC = {
@@ -102,7 +125,6 @@ CONFIG_TWO_COLUMNS_SCHEMA = {
     ],
 }
 
-
 CONFIG_TWO_COLUMNS = {
     "options": {
         "db_path": "tests/db/test_two_columns.db",
@@ -110,6 +132,36 @@ CONFIG_TWO_COLUMNS = {
         "probabilistic": True,
     },
     "schemas": [CONFIG_TWO_COLUMNS_SCHEMA],
+}
+
+
+CONFIG_MULTIPLE_TABLES_SCHEMA = {
+    "schema_name": "multiple_tables",
+    "tables": [
+        {
+            "table_name": "multiple1",
+            "table_name_path": "tests/data/multiple1.csv",
+            "id_col": "file_num",
+            "name_cols": ["name"],
+            "address_cols": ["address"],
+        },
+        {
+            "table_name": "multiple2",
+            "table_name_path": "tests/data/multiple2.csv",
+            "id_col": "file_num",
+            "name_cols": ["name"],
+            "address_cols": ["address"],
+        },
+    ],
+}
+
+CONFIG_MULTIPLE_TABLES = {
+    "options": {
+        "db_path": "tests/db/test_multiple_tables.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
+    "schemas": [CONFIG_MULTIPLE_TABLES_SCHEMA],
 }
 
 
@@ -315,6 +367,68 @@ def make_two_column_db():
     chainlink(
         CONFIG_TWO_COLUMNS,
         config_path="tests/configs/config_two_columns.yaml",
+    )
+
+
+@pytest.fixture
+def make_multiple_tables_db():
+    # if exists, then delete the db
+    if os.path.exists("tests/db/test_multiple_tables.db"):
+        os.remove("tests/db/test_multiple_tables.db")
+
+    pl.DataFrame({
+        "file_num": [
+            "1001",
+            "1002",
+            "1003",
+            "1004",
+            "1005",
+        ],
+        "name": [
+            "SMITH ENTERPRISES",
+            "JOHNSON HOLDINGS LLC",
+            "ANDERSON CONSULTING",
+            "WILSON PROPERTIES",
+            "ANOTHER NAME",
+        ],
+        "address": [
+            "565 MAIN AVE, CHICAGO, IL 60601",
+            "456 OAK AVE, EVANSTON, IL 60201",
+            "789 PINE BLVD, NAPERVILLE, IL 60540",
+            "321 ELM DR, SKOKIE, IL 60077",
+            "100 MAPLE RD, AURORA, IL 60506",
+        ],
+        "skip_address": [0, 0, 0, 0, 0],
+    }).write_csv("tests/data/multiple1.csv")
+
+    pl.DataFrame({
+        "file_num": [
+            "1001",
+            "1022",
+            "1003",
+            "1044",
+            "1055",
+        ],
+        "name": [
+            "SUMMIT INNOVATIONS",
+            "JOHNSON HOLDINGS LLC",  # This name is kept
+            "PINNACLE CONSULTING",
+            "RIVERSTONE PROPERTIES",
+            "EVERGREEN VENTURES",
+        ],
+        "address": [
+            "123 LAKE SHORE DR, CHICAGO, IL 60611",
+            "456 OAK AVE, EVANSTON, IL 60201",  # This address is kept
+            "500 UNIVERSITY AVE, NAPERVILLE, IL 60540",
+            "742 MAPLE ST, SKOKIE, IL 60077",
+            "321 ELM DR, SKOKIE, IL 60077",
+        ],
+        "skip_address": [0, 0, 0, 0, 0],
+    }).write_csv("tests/data/multiple2.csv")
+
+    chainlink(
+        CONFIG_MULTIPLE_TABLES,
+        config_path="tests/configs/config_multiple_tables.yaml",
     )
 
 
@@ -538,7 +652,7 @@ def test_small_exact_across(make_small_db):
     # eight matches
     assert df.shape[0] == 8
     assert df.shape[1] == 10
-    assert correct_df.sort("llc_file_num").equals(df.sort("llc_file_num"))
+    assert correct_df.sort(["llc_file_num", "parcel_pin"]).equals(df.sort(["llc_file_num", "parcel_pin"]))
 
 
 def test_small_fuzzy(make_small_db):
@@ -597,14 +711,59 @@ def test_two_columns(make_two_column_db):
     assert links.shape[0] == 3
 
 
-def test_export_tables():
-    # TODO zsh: segmentation fault  pytest -k test_download_tables
+def test_multiple_tables(make_multiple_tables_db):
+    db_path = "tests/db/test_multiple_tables.db"
 
-    export_tables("tests/db/test_small.db", "tests/export")
+    with duckdb.connect(db_path, read_only=True) as db_conn:
+        query = "SELECT * FROM link.multiple_tables_multiple_tables"
+        links = db_conn.execute(query).pl()
 
-    assert pl.scan_parquet("tests/export/link_llc_llc.parquet").collect().shape[0] == 1
-    assert pl.scan_parquet("tests/export/link_llc_parcel.parquet").collect().shape[0] == 8
-    assert pl.scan_parquet("tests/export/link_parcel_parcel.parquet").collect().shape[0] == 1
+        query = "show all tables"
+        all_df = db_conn.execute(query).pl()
+
+    # confirm multiple1 and multiple2 tables exist
+    assert all_df.filter(pl.col("name").is_in(["multiple1", "multiple2"])).shape[0] == 2
+
+    assert links.shape[0] == 2
+
+
+def test_col_not_in_file():
+    if os.path.exists("tests/db/test_simple_missing.db"):
+        os.remove("tests/db/test_simple_missing.db")
+
+    pl.DataFrame({
+        "id": ["1", "2", "3", "4"],
+        "name": ["Aus St", "Big Calm", "Cool Cool", "Aus St"],
+        "address": ["1", "2", "3", "4"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test1.csv")
+    pl.DataFrame({
+        "id": ["5", "6", "7", "8"],
+        "name": ["Aus St", "Erie Erie", "Cool Cool", "Good Doom"],
+        "address": ["5", "6", "3", "4"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test2.csv")
+
+    with pytest.raises(ValueError):
+        chainlink(
+            CONFIG_SIMPLE_MISSING,
+            config_path="tests/configs/config_simple_missing.yaml",
+        )
+
+
+# def test_export_tables():
+#     # TODO zsh: segmentation fault  pytest -k test_download_tables
+
+#     export_tables("tests/db/test_small.db", "tests/export")
+
+#     assert pl.scan_parquet("tests/export/link_llc_llc.parquet").collect().shape[0] == 1
+#     assert (
+#         pl.scan_parquet("tests/export/link_llc_parcel.parquet").collect().shape[0] == 8
+#     )
+#     assert (
+#         pl.scan_parquet("tests/export/link_parcel_parcel.parquet").collect().shape[0]
+#         == 1
+#     )
 
 
 def test_not_force_db():

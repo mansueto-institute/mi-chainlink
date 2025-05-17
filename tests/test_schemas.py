@@ -105,6 +105,35 @@ CONFIG_SMALL_INVALID = {
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
 }
 
+CONFIG_NON_UNIQUE = {
+    "options": {
+        "db_path": "tests/db/test_non_unique.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
+    "schemas": [
+        {
+            "schema_name": "llc",
+            "tables": [
+                {
+                    "table_name": "master",
+                    "table_name_path": "tests/data/small_llc.csv",
+                    "id_col": "file_num",
+                    "name_cols": ["name_raw"],
+                    "address_cols": ["address"],
+                },
+                {
+                    "table_name": "master2",
+                    "table_name_path": "tests/data/small_llc2.csv",
+                    "id_col": "id",
+                    "name_cols": ["name_raw"],
+                    "address_cols": ["address"],
+                },
+            ],
+        }
+    ],
+}
+
 
 def test_validate_simple_schema():
     assert validate_config(CONFIG_SIMPLE) is True
@@ -116,6 +145,7 @@ def test_validate_small_schema():
 
 def test_validate_invalid_schema():
     assert validate_config(CONFIG_SMALL_INVALID) is False
+    assert validate_config(CONFIG_NON_UNIQUE) is False
 
 
 @mock.patch("chainlink.utils.Prompt.ask", create=True)

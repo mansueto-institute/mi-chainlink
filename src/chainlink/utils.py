@@ -106,8 +106,19 @@ def validate_config(config: dict) -> bool:
     except jsonschema.exceptions.ValidationError as e:
         console.print(f"[bold red]> Invalid configuration: {e!s}")
         return False
-    else:  # no exception
-        return True
+
+    # ids across tables but within schema should be the same
+    for schema in config["schemas"]:
+        ids = set()
+        for table in schema["tables"]:
+            ids.add(table["id_col"])
+
+        if len(ids) != 1:
+            console.print(f"[bold red]> All tables in schema {schema['schema_name']} must have the same id column")
+            return False
+
+    # no exception
+    return True
 
 
 def update_config(db_path: str | Path, config: dict, config_path: str | Path) -> None:
