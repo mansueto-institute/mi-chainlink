@@ -161,23 +161,16 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
         if row["schema"] == "link" or row["name"] == "name_similarity":
             return row["column_names"][:2]
         elif row["schema"] == "entity":
-            return row["column_names"][1]
+            return [row["column_names"][1]]
         else:
-            return row["column_names"][0]
+            return [row["column_names"][0]]
 
     with duckdb.connect(db_path) as conn:
         df_db_columns = conn.sql("show all tables").pl()
 
-        print(df_db_columns)
-
-        # df_db_columns["schema_table"] = (
-        #     df_db_columns["schema"] + "." + df_db_columns["name"]
-        # )
-        # df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
-
         df_db_columns = df_db_columns.with_columns(
             schema_table=pl.col("schema") + "." + pl.col("name"),
-            id_col=pl.struct(pl.all()).map_elements(lambda x: find_id_cols(x)),
+            id_col=pl.struct(pl.all()).map_elements(lambda x: find_id_cols(x), return_dtype=pl.List(pl.String)),
         )
         link_filter = (pl.col("schema") == "link") | (pl.col("name") == "name_similarity")
 
@@ -195,18 +188,19 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
             d.write_parquet(f"{data_path}/{link[0].replace('.', '_')}.parquet")
 
         main_filter = (pl.col("schema") != "link") & (pl.col("name") != "name_similarity")
+        print(main_filter)
         main_to_export = zip(
             df_db_columns.filter(main_filter)["schema_table"].to_list(),
             df_db_columns.filter(main_filter)["id_col"].to_list(),
         )
 
-        for table in main_to_export:
+        for table, id_cols in main_to_export:
             sql_to_exec = f"""
-                (select * from {table[0]}
-                order by {table[1]} ASC);
+                (select * from {table}
+                order by {id_cols[0]} ASC);
             """
-            d = conn.execute(sql_to_exec).pl().cast({table[1]: pl.String})
-            d.write_parquet(f"{data_path}/{table[0].replace('.', '_')}.parquet")
+            d = conn.execute(sql_to_exec).pl().cast({id_cols[0]: pl.String})
+            d.write_parquet(f"{data_path}/{table.replace('.', '_')}.parquet")
 
     print("Exported all tables!")
     logger.info("Exported all tables!")

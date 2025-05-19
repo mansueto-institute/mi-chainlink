@@ -4,7 +4,7 @@ import duckdb
 import polars as pl
 import pytest
 
-from chainlink.main import chainlink
+from chainlink.main import chainlink, export_tables
 
 # add pytest fixture
 
@@ -751,19 +751,12 @@ def test_col_not_in_file():
         )
 
 
-# def test_export_tables():
-#     # TODO zsh: segmentation fault  pytest -k test_download_tables
+def test_export_tables():
+    export_tables("tests/db/test_small.db", "tests/export")
 
-#     export_tables("tests/db/test_small.db", "tests/export")
-
-#     assert pl.scan_parquet("tests/export/link_llc_llc.parquet").collect().shape[0] == 1
-#     assert (
-#         pl.scan_parquet("tests/export/link_llc_parcel.parquet").collect().shape[0] == 8
-#     )
-#     assert (
-#         pl.scan_parquet("tests/export/link_parcel_parcel.parquet").collect().shape[0]
-#         == 1
-#     )
+    assert pl.scan_parquet("tests/export/link_llc_llc.parquet").collect().shape[0] == 1
+    assert pl.scan_parquet("tests/export/link_llc_parcel.parquet").collect().shape[0] == 8
+    assert pl.scan_parquet("tests/export/link_parcel_parcel.parquet").collect().shape[0] == 1
 
 
 def test_not_force_db():
