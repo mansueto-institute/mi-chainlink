@@ -312,12 +312,10 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     table_name_path = Prompt.ask("[green]> Enter the path to the dataset")
     while not os.path.exists(table_name_path):
         table_name_path = Prompt.ask("[red]> Path does not exist. Please enter a valid path")
-    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique", default="id", show_default=True)
-    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
+    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique")
+    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)")
     name_cols = [_.strip() for _ in name_col_str.split(",")]
-    address_col_str = Prompt.ask(
-        "[green]> Enter the address column(s) (comma separated)", default="address", show_default=True
-    )
+    address_col_str = Prompt.ask("[green]> Enter the address column(s) (comma separated)")
     address_cols = [_.strip() for _ in address_col_str.split(",")]
 
     for idx, schema in enumerate(config["schemas"]):

@@ -64,11 +64,15 @@ def execute_match(
 
     if skip_address:
         address_condition = " != 1"
-        left_address_condition = f"{left_matching_col}_skip {address_condition}"
-        right_address_condition = f"{right_matching_col}_skip {address_condition}"
+        left_address_condition = f"l.{left_matching_col}_skip {address_condition}"
+        right_address_condition = f"r.{right_matching_col}_skip {address_condition}"
+        left_extra_col = f", {left_matching_col}_skip"
+        right_extra_col = f", {right_matching_col}_skip"
     else:
         left_address_condition = "TRUE"
         right_address_condition = "TRUE"
+        left_extra_col = ""
+        right_extra_col = ""
 
     temp_table = match_name_col + "_table"
 
@@ -76,38 +80,33 @@ def execute_match(
             CREATE SCHEMA IF NOT EXISTS link;
 
             CREATE OR REPLACE TABLE link.{temp_table} AS
-
-            WITH lhs AS (
-                SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
-                        {left_matching_id}
+            SELECT l.{left_entity}_{left_ent_id_edit},
+                   r.{right_entity}_{right_ent_id_edit},
+                   1 AS {match_name_col}
+            FROM 
+                (SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
+                        {left_matching_id} {left_extra_col}
                 FROM {left_entity}.{left_table}
-                WHERE {left_matching_id} IS NOT NULL
-                AND {left_address_condition}
-                )
-
-            , rhs AS (
-                SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
-                        {right_matching_id}
+                ) as l
+            JOIN
+                (SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
+                        {right_matching_id} {right_extra_col}
                 FROM {right_entity}.{right_table}
-                WHERE {right_matching_id} IS NOT NULL
+                ) as r
+                ON l.{left_matching_id} = r.{right_matching_id}
+                AND l.{left_matching_id} IS NOT NULL
+                AND r.{right_matching_id} IS NOT NULL
+                AND l.{left_entity}_{left_ent_id_edit} {matching_condition} r.{right_entity}_{right_ent_id_edit}
+            WHERE
+                {left_address_condition}
                 AND {right_address_condition}
-                )
-
-            , final as (
-
-            SELECT DISTINCT lhs.{left_entity}_{left_ent_id_edit},
-                            rhs.{right_entity}_{right_ent_id_edit},
-                            1 AS {match_name_col}
-            FROM lhs
-            INNER JOIN rhs
-            ON lhs.{left_matching_id} = rhs.{right_matching_id}
-            )
-
-            SELECT *
-            from final
-            WHERE {left_entity}_{left_ent_id_edit} {matching_condition} {right_entity}_{right_ent_id_edit};"""
+        ;"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
+        db_conn.execute("""
+        SET memory_limit = '175GB';
+        SET threads = 4;
+        """)
         db_conn.execute(matching_query)
         console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
@@ -120,6 +119,7 @@ def execute_match(
             match_name_col=match_name_col,
             id_col_2=f"{right_entity}_{right_ent_id_edit}",
         )
+        logger.debug(f"Finished match processing for {match_name_col}")
 
     return None
 
@@ -156,7 +156,8 @@ def execute_match_address(
         link_exclusions = []
 
     ## Match by raw address string and by street id
-    for match in ["address", "street"]:
+    for match in ["street", "address"]:
+        logger.debug(f"Executing {match} match")
         execute_match(
             db_path=db_path,
             match_type=f"{match}_match",

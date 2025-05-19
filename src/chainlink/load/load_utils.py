@@ -2,7 +2,7 @@ import polars as pl
 from duckdb import DuckDBPyConnection
 
 from chainlink.cleaning.cleaning_functions import (
-    clean_address,
+    clean_address_batch_parser,
     clean_names,
     clean_zipcode,
 )
@@ -86,10 +86,18 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             df = df.with_columns(
                 pl.col(col).alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
             )
-            df = df.with_columns(
-                pl.col(temp_address).map_elements(
-                    clean_address,
+
+            lookup = (
+                df.select(pl.col(temp_address).alias("temp_address"))
+                # select only the address column
+                # drop duplicates at the engine level
+                .unique()
+                # for each batch of ~batch_size rows, call our batch parser
+                .with_columns(
+                pl.col("temp_address").map_batches(
+                    clean_address_batch_parser,
                     return_dtype=pl.Struct([
+                        pl.Field("raw", pl.String),
                         pl.Field("address_number", pl.String),
                         pl.Field("street_pre_directional", pl.String),
                         pl.Field("street_name", pl.String),
@@ -103,8 +111,17 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
                         pl.Field("postal_code", pl.String),
                         pl.Field("street", pl.String),
                     ]),
+                ).alias("parsed")
+                )
+                .drop("temp_address")
+                .rename({"parsed": temp_address})
+                .unnest(temp_address)
+                .select(
+                    pl.col("raw").alias(raw_address),
+                    pl.struct(pl.exclude("raw")).alias(temp_address),
                 )
             )
+            df = df.drop(temp_address).join(lookup, on=raw_address, how="left")
             ta_fields = df[temp_address].struct.fields
             new_fields = [f"{col}_{f}" for f in ta_fields]
             df = (

@@ -48,6 +48,7 @@ def test_identify_state_city_invalid_input():
 
 def test_clean_address_correct_address():
     assert clean_address("123 E Hyde Park Blvd Apt. 15 Chicago, IL 60615") == {
+        "raw": "123 E Hyde Park Blvd Apt. 15 Chicago, IL 60615",
         "street": "123 E HYDE PARK BLVD",
         "address_number": "123",
         "street_pre_directional": "E",
@@ -65,6 +66,7 @@ def test_clean_address_correct_address():
 
 def test_clean_address_empty():
     assert clean_address("") == {
+        "raw": "",
         "street": None,
         "address_number": None,
         "street_pre_directional": None,
@@ -82,6 +84,7 @@ def test_clean_address_empty():
 
 def test_clean_address_zipcode_mismatch():
     assert clean_address("123 E Hyde Park Blvd #15 Whoeville, Grinchtown 60615") == {
+        "raw": "123 E Hyde Park Blvd #15 Whoeville, Grinchtown 60615",
         "street": "123 E HYDE PARK BLVD",
         "address_number": "123",
         "street_pre_directional": "E",
@@ -96,6 +99,7 @@ def test_clean_address_zipcode_mismatch():
         "subaddress_type": None,
     }
     assert clean_address("123 E Hyde Park Blvd #15 Chicago, IL 12345") == {
+        "raw": "123 E Hyde Park Blvd #15 Chicago, IL 12345",
         "street": "123 E HYDE PARK BLVD",
         "address_number": "123",
         "street_pre_directional": "E",
@@ -113,6 +117,7 @@ def test_clean_address_zipcode_mismatch():
 
 def test_clean_address_missing_parts():
     assert clean_address("123 E Hyde Park Blvd # 15 Whoeville, Grinchtown 60615") == {
+        "raw": "123 E Hyde Park Blvd # 15 Whoeville, Grinchtown 60615",
         "street": "123 E HYDE PARK BLVD",
         "address_number": "123",
         "street_pre_directional": "E",
@@ -130,6 +135,7 @@ def test_clean_address_missing_parts():
 
 def test_clean_address_irregular():
     assert clean_address("US STEEL TWR 600 GRANT 44TH FL PITTSBURGH PA 15219") == {
+        "raw":"US STEEL TWR 600 GRANT 44TH FL PITTSBURGH PA 15219",
         "street": None,
         "address_number": None,
         "street_pre_directional": None,
@@ -144,6 +150,7 @@ def test_clean_address_irregular():
         "subaddress_type": "FL",
     }
     assert clean_address("2851 JOHN STREET, SUITE ONE MARKHAM, ONTARIO AO L3R 5") == {
+        "raw": "2851 JOHN STREET, SUITE ONE MARKHAM, ONTARIO AO L3R 5",
         "street": "2851 JOHN ST",
         "address_number": "2851",
         "street_pre_directional": None,
@@ -158,6 +165,7 @@ def test_clean_address_irregular():
         "subaddress_type": None,
     }
     assert clean_address("POB 362 CLAY CITY IL 62824") == {
+        "raw": "POB 362 CLAY CITY IL 62824",
         "street": None,
         "address_number": None,
         "street_pre_directional": None,
@@ -172,6 +180,7 @@ def test_clean_address_irregular():
         "subaddress_type": None,
     }
     assert clean_address("1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154") == {
+        "raw": "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154",
         "street": None,
         "address_number": None,
         "street_pre_directional": None,
