@@ -21,8 +21,6 @@ DIR = pathlib.Path(__file__).parent
 
 app = typer.Typer()
 
-app = typer.Typer()
-
 
 def chainlink(
     config: dict,
@@ -100,28 +98,8 @@ def chainlink(
 
         # if not force create, check if each col exists, and skip if so
         if not force_db_create:
-            for table in schema_config["tables"]:
-                # if no existing tables, then empty db_columns
-                try:
-                    db_columns = (
-                        df_db_columns[
-                            (df_db_columns["schema"] == schema_name) & (df_db_columns["name"] == table["table_name"])
-                        ]["column_names"]
-                        .values[0]
-                        .tolist()
-                    )
-                except Exception:
-                    db_columns = []
-
-                columns = list(table["name_cols"])
-                columns += list(table["address_cols"])
-
-                # if all columns are in df_db_columns then continue
-                if not all(col in db_columns for col in columns):
-                    new_schemas.append(schema_name)
-                else:
-                    print(f"Skipping schema {schema_name}")
-                    logger.debug(f"Skipping schema {schema_name}")
+            if df_db_columns.filter(pl.col("schema") == schema_name).shape[0] == 0:
+                new_schemas.append(schema_name)
         else:
             new_schemas.append(schema_name)
 

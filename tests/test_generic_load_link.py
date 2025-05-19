@@ -760,4 +760,127 @@ def test_export_tables():
 
 
 def test_not_force_db():
-    pass
+    CONFIG_SIMPLE_1_AMENDED = {
+        "schema_name": "test_simple1",
+        "tables": [
+            {
+                "table_name": "test1",
+                "table_name_path": "tests/data/test1.csv",
+                "id_col": "id",
+                "name_cols": ["name"],
+                "address_cols": [],
+            }
+        ],
+    }
+
+    CONFIG_SIMPLE_PT1 = {
+        "options": {
+            "db_path": "tests/db/test_force_db.db",
+            "force_db_create": True,
+            "probabilistic": True,
+        },
+        "schemas": [CONFIG_SIMPLE_1],
+    }
+    CONFIG_SIMPLE_PT2_A = {
+        "options": {
+            "db_path": "tests/db/test_force_db.db",
+            "force_db_create": False,
+            "probabilistic": True,
+        },
+        "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
+    }
+
+    CONFIG_SIMPLE_PT2_B = {
+        "options": {
+            "db_path": "tests/db/test_force_db.db",
+            "force_db_create": False,
+            "probabilistic": True,
+        },
+        "schemas": [CONFIG_SIMPLE_1_AMENDED, CONFIG_SIMPLE_2],
+    }
+
+    CONFIG_SIMPLE_PT3 = {
+        "options": {
+            "db_path": "tests/db/test_force_db.db",
+            "force_db_create": True,
+            "probabilistic": True,
+        },
+        "schemas": [CONFIG_SIMPLE_1_AMENDED, CONFIG_SIMPLE_2],
+    }
+
+    chainlink(
+        CONFIG_SIMPLE_PT1,
+        config_path="tests/configs/config_force_db.yaml",
+    )
+
+    # check if db exists
+    assert os.path.exists("tests/db/test_force_db.db")
+    # check if table exists
+    with duckdb.connect("tests/db/test_force_db.db", read_only=True) as db_conn:
+        query = "SHOW ALL TABLES"
+        df = db_conn.execute(query).pl()
+    assert df.filter(pl.col("schema") == "link").shape[0] == 1
+    assert df.filter(pl.col("schema") == "test_simple1").shape[0] == 1
+    assert df.filter(pl.col("schema") == "test_simple2").shape[0] == 0
+    list_of_link_cols = df.filter(pl.col("schema") == "link").select("column_names").item()
+    assert len(list_of_link_cols) == 10
+
+    chainlink(
+        CONFIG_SIMPLE_PT2_A,
+        config_path="tests/configs/config_force_db.yaml",
+    )
+
+    assert os.path.exists("tests/db/test_force_db.db")
+    # check if table exists
+    with duckdb.connect("tests/db/test_force_db.db", read_only=True) as db_conn:
+        query = "SHOW ALL TABLES"
+        df = db_conn.execute(query).pl()
+    assert df.filter(pl.col("schema") == "link").shape[0] == 3
+    assert df.filter(pl.col("schema") == "test_simple1").shape[0] == 1
+    assert df.filter(pl.col("schema") == "test_simple2").shape[0] == 1
+    list_of_link_cols = (
+        df.filter((pl.col("schema") == "link") & (pl.col("name") == "test_simple1_test_simple1"))
+        .select("column_names")
+        .item()
+    )
+    assert len(list_of_link_cols) == 10
+
+    chainlink(
+        CONFIG_SIMPLE_PT2_B,
+        config_path="tests/configs/config_force_db.yaml",
+    )
+
+    assert os.path.exists("tests/db/test_force_db.db")
+    # check if table exists
+    with duckdb.connect("tests/db/test_force_db.db", read_only=True) as db_conn:
+        query = "SHOW ALL TABLES"
+        df = db_conn.execute(query).pl()
+    assert df.filter(pl.col("schema") == "link").shape[0] == 3
+    assert df.filter(pl.col("schema") == "test_simple1").shape[0] == 1
+    assert df.filter(pl.col("schema") == "test_simple2").shape[0] == 1
+    list_of_link_cols = (
+        df.filter((pl.col("schema") == "link") & (pl.col("name") == "test_simple1_test_simple1"))
+        .select("column_names")
+        .item()
+    )
+    assert len(list_of_link_cols) == 10
+
+    chainlink(
+        CONFIG_SIMPLE_PT3,
+        config_path="tests/configs/config_force_db.yaml",
+    )
+
+    assert os.path.exists("tests/db/test_force_db.db")
+    # check if table exists
+    with duckdb.connect("tests/db/test_force_db.db", read_only=True) as db_conn:
+        query = "SHOW ALL TABLES"
+        df = db_conn.execute(query).pl()
+    assert df.filter(pl.col("schema") == "link").shape[0] == 3
+    assert df.filter(pl.col("schema") == "test_simple1").shape[0] == 1
+    assert df.filter(pl.col("schema") == "test_simple2").shape[0] == 1
+    list_of_link_cols = (
+        df.filter((pl.col("schema") == "link") & (pl.col("name") == "test_simple1_test_simple1"))
+        .select("column_names")
+        .item()
+    )
+    assert len(list_of_link_cols) == 4
