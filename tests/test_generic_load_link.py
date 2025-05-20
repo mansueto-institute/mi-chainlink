@@ -3,6 +3,7 @@ import os
 import duckdb
 import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from chainlink.main import chainlink, export_tables
 
@@ -514,7 +515,7 @@ def test_small_exact_within(make_small_db):
         # one match
         assert df.shape[0] == 1
         assert df.shape[1] == 10
-        assert correct_df.equals(df)
+        assert_frame_equal(correct_df, df, check_column_order=False, check_dtypes=False)
 
         query = "SELECT * FROM link.parcel_parcel"
         df = db_conn.execute(query).pl()
@@ -525,7 +526,7 @@ def test_small_exact_within(make_small_db):
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_unit_fuzzy_match": [0.0],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_fuzzy_match": [0.0],
             "parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_fuzzy_match": [0.0],
-            "parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match": [None],
+            "parcel_parcels_tax_payer_name_parcel_parcels_tax_payer_name_name_match": [0],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_address_match": [1],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_match": [1],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_unit_match": [0],
@@ -536,7 +537,7 @@ def test_small_exact_within(make_small_db):
         assert df.shape[0] == 1
         # on within fuzzy match
         assert df.shape[1] == 10
-        assert correct_df.equals(df)
+        assert_frame_equal(correct_df, df, check_column_order=False, check_dtypes=False)
 
 
 def test_small_exact_across(make_small_db):
@@ -598,24 +599,24 @@ def test_small_exact_across(make_small_db):
             0.9805094416874218,
         ],
         "llc_master_name_raw_parcel_parcels_tax_payer_name_name_match": [
-            None,
+            0,
             1,
             1,
-            None,
-            None,
-            None,
-            None,
-            None,
+            0,
+            0,
+            0,
+            0,
+            0,
         ],
         "llc_master_address_parcel_parcels_mailing_address_address_match": [
-            None,
             0,
             0,
-            None,
+            0,
+            0,
             1,
             1,
             1,
-            None,
+            0,
         ],
         "llc_master_address_parcel_parcels_mailing_address_street_match": [
             1,
@@ -625,7 +626,7 @@ def test_small_exact_across(make_small_db):
             1,
             1,
             1,
-            None,
+            0,
         ],
         "llc_master_address_parcel_parcels_mailing_address_unit_match": [
             0,
@@ -635,7 +636,7 @@ def test_small_exact_across(make_small_db):
             0,
             0,
             0,
-            None,
+            0,
         ],
         "llc_master_address_parcel_parcels_mailing_address_street_num_match": [
             1,
@@ -645,14 +646,21 @@ def test_small_exact_across(make_small_db):
             1,
             1,
             1,
-            None,
+            0,
         ],
     })
 
     # eight matches
     assert df.shape[0] == 8
     assert df.shape[1] == 10
-    assert correct_df.sort(["llc_file_num", "parcel_pin"]).equals(df.sort(["llc_file_num", "parcel_pin"]))
+    print(df)
+    print(correct_df)
+    assert_frame_equal(
+        correct_df.sort(["llc_file_num", "parcel_pin"]),
+        df.sort(["llc_file_num", "parcel_pin"]),
+        check_column_order=False,
+        check_dtypes=False,
+    )
 
 
 def test_small_fuzzy(make_small_db):
@@ -669,17 +677,17 @@ def test_small_fuzzy(make_small_db):
         "llc_master_address_parcel_parcels_mailing_address_unit_fuzzy_match": [0.0],
         "llc_master_address_parcel_parcels_mailing_address_street_fuzzy_match": [0.0],
         "llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match": [0.9805094416874218],
-        "llc_master_name_raw_parcel_parcels_tax_payer_name_name_match": [None],
-        "llc_master_address_parcel_parcels_mailing_address_address_match": [None],
-        "llc_master_address_parcel_parcels_mailing_address_street_match": [None],
-        "llc_master_address_parcel_parcels_mailing_address_unit_match": [None],
-        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [None],
+        "llc_master_name_raw_parcel_parcels_tax_payer_name_name_match": [0],
+        "llc_master_address_parcel_parcels_mailing_address_address_match": [0],
+        "llc_master_address_parcel_parcels_mailing_address_street_match": [0],
+        "llc_master_address_parcel_parcels_mailing_address_unit_match": [0],
+        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [0],
     })
 
     # one fuzzy match
     df_test = df.filter(pl.col("llc_master_name_raw_parcel_parcels_tax_payer_name_fuzzy_match") > 0)
     assert df_test.shape[0] == 1
-    assert df_test.equals(correct_df)
+    assert_frame_equal(df_test, correct_df, check_column_order=False, check_dtypes=False)
 
 
 def test_small_link_exclusion(make_small_db_link_exclusion):

@@ -3,6 +3,7 @@ from duckdb import DuckDBPyConnection
 
 from chainlink.cleaning.cleaning_functions import (
     clean_address,
+    clean_address_batch_parser,  # noqa: F401
     clean_names,
     clean_zipcode,
 )
@@ -90,6 +91,7 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
                 pl.col(temp_address).map_elements(
                     clean_address,
                     return_dtype=pl.Struct([
+                        pl.Field("raw", pl.String),
                         pl.Field("address_number", pl.String),
                         pl.Field("street_pre_directional", pl.String),
                         pl.Field("street_name", pl.String),
@@ -108,7 +110,8 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             ta_fields = df[temp_address].struct.fields
             new_fields = [f"{col}_{f}" for f in ta_fields]
             df = (
-                df.with_columns(pl.col(temp_address).struct.rename_fields(new_fields))
+                df.drop(raw_address)
+                .with_columns(pl.col(temp_address).struct.rename_fields(new_fields))
                 .unnest(temp_address)
                 .with_columns(
                     pl.col(f"{col}_postal_code").cast(pl.String).map_elements(clean_zipcode, return_dtype=pl.String),

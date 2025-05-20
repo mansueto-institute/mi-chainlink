@@ -39,16 +39,21 @@ def chainlink(
     load_only = config["options"].get("load_only", False)
     db_path = config["options"].get("db_path", DIR / "db/linked.db")
 
+    no_names = True
+    no_addresses = True
+
     # create snake case columns
     for schema in config["schemas"]:
         for table in schema["tables"]:
-            if table["name_cols"] is not None:
+            if len(table["name_cols"]) > 0:
+                no_names = False
                 table["name_cols_og"] = table["name_cols"]
                 table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
             else:
                 table["name_cols"] = []
 
-            if table["address_cols"] is not None:
+            if len(table["address_cols"]) > 0:
+                no_addresses = False
                 table["address_cols_og"] = table["address_cols"]
                 table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
             else:
@@ -129,10 +134,12 @@ def chainlink(
         # only if there are new schemas added
         if len(new_schemas) > 0:
             with console.status("[bold yellow] Working on fuzzy matching scores") as status:
-                generate_tfidf_links(db_path, table_location="entity.name_similarity")
-                generate_tfidf_links(
-                    db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
-                )
+                if not no_names:
+                    generate_tfidf_links(db_path, table_location="entity.name_similarity")
+                if not no_addresses:
+                    generate_tfidf_links(
+                        db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
+                    )
 
         # for across link
         links = []

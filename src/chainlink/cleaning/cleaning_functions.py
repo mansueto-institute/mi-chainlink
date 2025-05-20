@@ -24,6 +24,10 @@ zip_cache: dict[str, dict[str, str]] = {}
 state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
 
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+import polars as pl
+
 
 def predict_org(name: str) -> int:
     """
@@ -116,6 +120,55 @@ def identify_state_city(zipcode: str) -> tuple:
 
     except ValueError:
         return (None, None)
+
+def clean_address_batch(address_batch):
+        return [clean_address(addr) for addr in address_batch]
+
+def clean_address_batch_parser(df_batch):
+    # 2) Pull the batch into Python for parallel parsing
+    addresses = df_batch.to_list()
+
+    # 3) Spin up one process per core (or core-1)
+    n_workers = multiprocessing.cpu_count()
+
+    def chunk_list(lst, n_chunks):
+        from math import ceil
+        chunk_size = ceil(len(lst) / n_chunks)
+        return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
+    chunks = chunk_list(addresses, n_workers)
+
+    with ProcessPoolExecutor(max_workers=n_workers) as exe:
+        results = exe.map(clean_address_batch, chunks)
+
+    # Flatten the list of lists
+    parsed_dicts = [item for sublist in results for item in sublist]
+
+
+    # 4) Build a Polars DataFrame of the parsed results
+    parsed_df = pl.DataFrame(
+        parsed_dicts,
+        schema={
+            "raw": pl.String,
+            "address_number": pl.String,
+            "street_pre_directional": pl.String,
+            "street_name": pl.String,
+            "street_post_type": pl.String,
+            "unit_type": pl.String,
+            "unit_number": pl.String,
+            "subaddress_type": pl.String,
+            "subaddress_identifier": pl.String,
+            "city": pl.String,
+            "state": pl.String,
+            "postal_code": pl.String,
+            "street": pl.String,
+        },
+    )
+
+    # 5) Re‑attach the original address for the join key
+    parsed_struct = parsed_df.select(pl.struct(pl.all()).alias("address_struct")).to_series(0)
+
+    return parsed_struct
 
 
 def clean_address(raw: str) -> dict:
@@ -235,6 +288,8 @@ def clean_address(raw: str) -> dict:
 
     for key, value in record.items():
         record[key] = None if value == "" else value
+
+    record["raw"] = raw
 
     return record
 
