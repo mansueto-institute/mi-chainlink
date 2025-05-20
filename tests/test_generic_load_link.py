@@ -58,6 +58,35 @@ CONFIG_SIMPLE = {
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
 }
 
+CONFIG_SIMPLE_CROSS_SCHEMA = {
+    "schema_name": "test_simple1",
+    "tables": [
+        {
+            "table_name": "test1",
+            "table_name_path": "tests/data/test1_cross.csv",
+            "id_col": "id",
+            "name_cols": ["name1", "name2"],
+            "address_cols": ["address"],
+        },
+        {
+            "table_name": "test2",
+            "table_name_path": "tests/data/test2_cross.csv",
+            "id_col": "id",
+            "name_cols": ["name1", "name2"],
+            "address_cols": ["address"],
+        },
+    ],
+}
+
+CONFIG_SIMPLE_CROSS = {
+    "options": {
+        "db_path": "tests/db/test_simple_cross.db",
+        "force_db_create": True,
+        "probabilistic": True,
+    },
+    "schemas": [CONFIG_SIMPLE_CROSS_SCHEMA],
+}
+
 CONFIG_SIMPLE_MISSING = {
     "options": {
         "db_path": "tests/db/test_simple.db",
@@ -187,6 +216,32 @@ def make_simple_db():
     chainlink(
         CONFIG_SIMPLE,
         config_path="tests/configs/config_simple.yaml",
+    )
+
+
+@pytest.fixture
+def make_simple_cross_db():
+    if os.path.exists("tests/db/test_simple_cross.db"):
+        os.remove("tests/db/test_simple_cross.db")
+
+    pl.DataFrame({
+        "id": ["1", "2", "3", "4"],
+        "name1": ["Aus St", "Big Calm", "Cool Cool", "Aus St"],
+        "name2": ["Big Calm", "Aus St", "Cool Cool", "Aus St"],
+        "address": ["1", "2", "3", "4"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test1_cross.csv")
+    pl.DataFrame({
+        "id": ["5", "1", "7", "8"],
+        "name1": ["Aus St", "Cool Cool", "Cool Cool", "Good Doom"],
+        "name2": ["Aus St", "Erie Erie", "Cool Cool", "Good Doom"],
+        "address": ["5", "6", "7", "8"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test2_cross.csv")
+
+    chainlink(
+        CONFIG_SIMPLE_CROSS,
+        config_path="tests/configs/config_simple_cross.yaml",
     )
 
 
@@ -356,7 +411,7 @@ def make_two_column_db():
             "100 MAPLE RD, AURORA, IL 60506",
         ],
         "address2": [
-            "100 STATE ST, CHICAGO, IL 60602",
+            "100 MAPLE ROAD, AURORA, IL 60506",
             "200 LAKE AVE, EVANSTON, IL 60202",
             "565 MAIN ST, CHICAGO, IL 60601",
             "400 CENTRAL AVE, SKOKIE, IL 60076",
@@ -451,7 +506,7 @@ def test_simple_exact_within(make_simple_db):
     # test_simple1_test1_address_test_simple1_test1_address_street_match,
     # test_simple1_test1_address_test_simple1_test1_address_unit_match,
     # test_simple1_test1_address_test_simple1_test1_address_street_num_match
-    assert df.shape[1] == 10
+    assert df.shape[1] == 9
 
 
 def test_simple_exact_across(make_simple_db):
@@ -472,7 +527,7 @@ def test_simple_exact_across(make_simple_db):
     # test_simple1_test1_address_test_simple2_test2_address_unit_match,
     # test_simple1_test1_address_test_simple2_test2_address_unit_fuzzy_match,
     # test_simple1_test1_address_test_simple2_test2_address_street_num_match
-    assert df.shape[1] == 10
+    assert df.shape[1] == 9
 
 
 def test_small_entity_tables(make_small_db):
@@ -507,14 +562,13 @@ def test_small_exact_within(make_small_db):
             "llc_master_address_llc_master_address_address_match": [0],
             "llc_master_address_llc_master_address_street_match": [0],
             "llc_master_address_llc_master_address_unit_match": [0],
-            "llc_master_address_llc_master_address_street_num_match": [0],
         })
         # for row in df.rows():
         #     print(row)
 
         # one match
         assert df.shape[0] == 1
-        assert df.shape[1] == 10
+        assert df.shape[1] == 9
         assert_frame_equal(correct_df, df, check_column_order=False, check_dtypes=False)
 
         query = "SELECT * FROM link.parcel_parcel"
@@ -530,13 +584,12 @@ def test_small_exact_within(make_small_db):
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_address_match": [1],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_match": [1],
             "parcel_parcels_mailing_address_parcel_parcels_mailing_address_unit_match": [0],
-            "parcel_parcels_mailing_address_parcel_parcels_mailing_address_street_num_match": [1],
         })
 
         # one match
         assert df.shape[0] == 1
         # on within fuzzy match
-        assert df.shape[1] == 10
+        assert df.shape[1] == 9
         assert_frame_equal(correct_df, df, check_column_order=False, check_dtypes=False)
 
 
@@ -638,23 +691,11 @@ def test_small_exact_across(make_small_db):
             0,
             0,
         ],
-        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [
-            1,
-            0,
-            0,
-            0,
-            1,
-            1,
-            1,
-            0,
-        ],
     })
 
     # eight matches
     assert df.shape[0] == 8
-    assert df.shape[1] == 10
-    print(df)
-    print(correct_df)
+    assert df.shape[1] == 9
     assert_frame_equal(
         correct_df.sort(["llc_file_num", "parcel_pin"]),
         df.sort(["llc_file_num", "parcel_pin"]),
@@ -681,7 +722,6 @@ def test_small_fuzzy(make_small_db):
         "llc_master_address_parcel_parcels_mailing_address_address_match": [0],
         "llc_master_address_parcel_parcels_mailing_address_street_match": [0],
         "llc_master_address_parcel_parcels_mailing_address_unit_match": [0],
-        "llc_master_address_parcel_parcels_mailing_address_street_num_match": [0],
     })
 
     # one fuzzy match
@@ -831,7 +871,7 @@ def test_not_force_db():
     assert df.filter(pl.col("schema") == "test_simple1").shape[0] == 1
     assert df.filter(pl.col("schema") == "test_simple2").shape[0] == 0
     list_of_link_cols = df.filter(pl.col("schema") == "link").select("column_names").item()
-    assert len(list_of_link_cols) == 10
+    assert len(list_of_link_cols) == 9
 
     chainlink(
         CONFIG_SIMPLE_PT2_A,
@@ -851,7 +891,7 @@ def test_not_force_db():
         .select("column_names")
         .item()
     )
-    assert len(list_of_link_cols) == 10
+    assert len(list_of_link_cols) == 9
 
     chainlink(
         CONFIG_SIMPLE_PT2_B,
@@ -871,7 +911,7 @@ def test_not_force_db():
         .select("column_names")
         .item()
     )
-    assert len(list_of_link_cols) == 10
+    assert len(list_of_link_cols) == 9
 
     chainlink(
         CONFIG_SIMPLE_PT3,
@@ -892,3 +932,116 @@ def test_not_force_db():
         .item()
     )
     assert len(list_of_link_cols) == 4
+
+
+def test_simple_cross(make_simple_cross_db):
+    db_path = "tests/db/test_simple_cross.db"
+    with duckdb.connect(db_path, read_only=True) as db_conn:
+        query = "SELECT * FROM link.test_simple1_test_simple1"
+        df = db_conn.execute(query).pl()
+
+    assert df.shape[0] == 9  # 1-2, 1-4, 2-4, 1-5, 2-5, 4-5, 3-7, 1-3, 1-7
+    num_columns = (
+        2  # id columns
+        + 4  # name to name within table 1
+        + 4  # name to name fuzzy within table 1
+        + 4  # name to name within table 2
+        + 4  # name to name fuzzy within table 2
+        + 2  # table 1 name 1 to table 2 name 1 + fuzzy
+        + 2  # table 1 name 1 to table 2 name 2 + fuzzy
+        + 2  # table 1 name 2 to table 2 name 1 + fuzzy
+        + 2  # table 1 name 2 to table 2 name 2 + fuzzy
+        + 8  # all above reversed
+        + 3  # address to address within table 1
+        + 2  # address to address fuzzy within table 1
+        + 3  # address to address within table 2
+        + 2  # address to address fuzzy within table 2
+        + 5  # table 1 address to table 2 address + fuzzy
+        + 5  # table 2 address to table 1 address + fuzzy
+    )
+    for col in df.columns:
+        if "name_match" in col:
+            print(col)
+
+    assert df.shape[1] == num_columns
+
+    assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "2")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
+        )
+    ).item().to_list() == [0, 1, 1, 0]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "4")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 0, 0]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "2") & (pl.col("test_simple1_id_2") == "4")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test1_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
+        )
+    ).item().to_list() == [0, 0, 1, 1]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "5")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 0, 0]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "2") & (pl.col("test_simple1_id_2") == "5")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
+        )
+    ).item().to_list() == [0, 0, 1, 1]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "4") & (pl.col("test_simple1_id_2") == "5")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 1, 1]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "3") & (pl.col("test_simple1_id_2") == "7")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name1_test_simple1_test2_name2_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 1, 1]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "7")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test2_name1_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test2_name1_test_simple1_test2_name2_name_match"),
+            pl.col("test_simple1_test2_name2_test_simple1_test2_name1_name_match"),
+            pl.col("test_simple1_test2_name2_test_simple1_test2_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 0, 0]
+
+    assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "3")).select(
+        pl.concat_list(
+            pl.col("test_simple1_test2_name1_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test2_name1_test_simple1_test1_name2_name_match"),
+            pl.col("test_simple1_test2_name2_test_simple1_test1_name1_name_match"),
+            pl.col("test_simple1_test2_name2_test_simple1_test1_name2_name_match"),
+        )
+    ).item().to_list() == [1, 1, 0, 0]

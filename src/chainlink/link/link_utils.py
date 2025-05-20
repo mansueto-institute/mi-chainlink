@@ -53,10 +53,14 @@ def execute_match(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_matching_col}"
     right_side = f"{right_entity}_{right_table}_{right_matching_col}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_{match_type}"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name_col = f"{left_side}_{right_side}_{match_type}"
+        else:
+            match_name_col = f"{right_side}_{left_side}_{match_type}"
     else:
-        match_name_col = f"{right_side}_{left_side}_{match_type}"
+        match_name_col = f"{left_side}_{right_side}_{match_type}"
+        print(f"match_name_col: {match_name_col}")
 
     # check link exclusion
     if any(exclusion in match_name_col for exclusion in link_exclusions):
@@ -178,10 +182,13 @@ def execute_match_address(
     ## If street id matches, match by unit
     left_side = f"{left_entity}_{left_table}_{left_address}"
     right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        street_match_to_check = f"{left_side}_{right_side}_street_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            street_match_to_check = f"{left_side}_{right_side}_street_match"
+        else:
+            street_match_to_check = f"{right_side}_{left_side}_street_match"
     else:
-        street_match_to_check = f"{right_side}_{left_side}_street_match"
+        street_match_to_check = f"{left_side}_{right_side}_street_match"
 
     execute_match_unit(
         db_path=db_path,
@@ -199,19 +206,19 @@ def execute_match_address(
         link_exclusions=link_exclusions,
     )
     ## match street name and number if zipcode matches
-    execute_match_street_name_and_num(
-        db_path=db_path,
-        left_entity=left_entity,
-        right_entity=right_entity,
-        left_table=left_table,
-        left_address=left_address,
-        left_ent_id=left_ent_id,
-        right_table=right_table,
-        right_address=right_address,
-        right_ent_id=right_ent_id,
-        skip_address=skip_address,
-        link_exclusions=link_exclusions,
-    )
+    # execute_match_street_name_and_num(
+    #     db_path=db_path,
+    #     left_entity=left_entity,
+    #     right_entity=right_entity,
+    #     left_table=left_table,
+    #     left_address=left_address,
+    #     left_ent_id=left_ent_id,
+    #     right_table=right_table,
+    #     right_address=right_address,
+    #     right_ent_id=right_ent_id,
+    #     skip_address=skip_address,
+    #     link_exclusions=link_exclusions,
+    # )
 
 
 # EXECUTE MATCH HELPERS
@@ -249,7 +256,6 @@ def execute_match_processing(
     db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL")
 
     cols = [row[1] for row in db_conn.execute(f"PRAGMA table_info('{link_table}')").fetchall()]
-    print(cols)
     for col in cols:
         db_conn.execute(f"UPDATE {link_table} SET {col} = 0 WHERE {col} IS NULL")
 
@@ -330,11 +336,13 @@ def execute_match_unit(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_address}"
     right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_unit_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name_col = f"{left_side}_{right_side}_unit_match"
+        else:
+            match_name_col = f"{right_side}_{left_side}_unit_match"
     else:
-        match_name_col = f"{right_side}_{left_side}_unit_match"
-
+        match_name_col = f"{left_side}_{right_side}_unit_match"
     # check link exclusion
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
@@ -583,10 +591,13 @@ def execute_fuzzy_link(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_name_col}"
     right_side = f"{right_entity}_{right_table}_{right_name_col}"
-    if left_side < right_side:
-        match_name = f"{left_side}_{right_side}_fuzzy_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name = f"{left_side}_{right_side}_fuzzy_match"
+        else:
+            match_name = f"{right_side}_{left_side}_fuzzy_match"
     else:
-        match_name = f"{right_side}_{left_side}_fuzzy_match"
+        match_name = f"{left_side}_{right_side}_fuzzy_match"
 
     # check link exclusion
     if any(exclusion in match_name for exclusion in link_exclusions):
@@ -884,12 +895,14 @@ def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[l
     across_name_combos: list = []
     for i, j in across_combos_name_idx:
         across_name_combos += itertools.product(name_idx[i], name_idx[j])
+        across_name_combos += itertools.product(name_idx[j], name_idx[i])
 
     if len(address_idx) > 0:
         across_address_combos: list = []
         across_combos_address_idx = list(itertools.combinations(range(len(address_idx)), 2))
         for i, j in across_combos_address_idx:
             across_address_combos += itertools.product(address_idx[i], address_idx[j])
+            across_address_combos += itertools.product(address_idx[j], address_idx[i])
 
         return across_name_combos, across_address_combos
 
