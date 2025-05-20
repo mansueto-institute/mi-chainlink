@@ -60,7 +60,6 @@ def execute_match(
             match_name_col = f"{right_side}_{left_side}_{match_type}"
     else:
         match_name_col = f"{left_side}_{right_side}_{match_type}"
-        print(f"match_name_col: {match_name_col}")
 
     # check link exclusion
     if any(exclusion in match_name_col for exclusion in link_exclusions):

@@ -94,7 +94,6 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
 
     # across files for name
     for left, right in across_name_combos:
-        print(left, right)
         left_name, left_table, left_ent_id = left
         right_name, right_table, right_ent_id = right
 
@@ -116,7 +115,6 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
 
     # across files for address
     for left, right in across_address_combos:
-        print(left, right)
         left_address, left_table, left_ent_id = left
         right_address, right_table, right_ent_id = right
 
