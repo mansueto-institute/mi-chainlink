@@ -83,7 +83,7 @@ def execute_match(
             SELECT l.{left_entity}_{left_ent_id_edit},
                    r.{right_entity}_{right_ent_id_edit},
                    1 AS {match_name_col}
-            FROM 
+            FROM
                 (SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
                         {left_matching_id} {left_extra_col}
                 FROM {left_entity}.{left_table}

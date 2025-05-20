@@ -1,5 +1,9 @@
+import multiprocessing
 import re
+from concurrent.futures import ProcessPoolExecutor
+from math import ceil
 
+import polars as pl
 import us
 import usaddress
 from scourgify import normalize_address_record
@@ -23,10 +27,6 @@ zip_cache: dict[str, dict[str, str]] = {}
 
 state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
-
-import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
-import polars as pl
 
 
 def predict_org(name: str) -> int:
@@ -121,20 +121,21 @@ def identify_state_city(zipcode: str) -> tuple:
     except ValueError:
         return (None, None)
 
-def clean_address_batch(address_batch):
-        return [clean_address(addr) for addr in address_batch]
 
-def clean_address_batch_parser(df_batch):
+def clean_address_batch(address_batch: list[str]) -> list[dict]:
+    return [clean_address(addr) for addr in address_batch]
+
+
+def clean_address_batch_parser(df_batch: pl.Series) -> pl.Series:
     # 2) Pull the batch into Python for parallel parsing
     addresses = df_batch.to_list()
 
     # 3) Spin up one process per core (or core-1)
     n_workers = multiprocessing.cpu_count()
 
-    def chunk_list(lst, n_chunks):
-        from math import ceil
+    def chunk_list(lst: list, n_chunks: int) -> list[list]:
         chunk_size = ceil(len(lst) / n_chunks)
-        return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+        return [lst[i : i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
     chunks = chunk_list(addresses, n_workers)
 
@@ -143,7 +144,6 @@ def clean_address_batch_parser(df_batch):
 
     # Flatten the list of lists
     parsed_dicts = [item for sublist in results for item in sublist]
-
 
     # 4) Build a Polars DataFrame of the parsed results
     parsed_df = pl.DataFrame(
@@ -165,7 +165,7 @@ def clean_address_batch_parser(df_batch):
         },
     )
 
-    # 5) Re‑attach the original address for the join key
+    # 5) Re-attach the original address for the join key
     parsed_struct = parsed_df.select(pl.struct(pl.all()).alias("address_struct")).to_series(0)
 
     return parsed_struct
