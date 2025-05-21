@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ## Report Bugs
 
-Report bugs at https://github.com/mansueto-institute/linkage/issues
+Report bugs at https://github.com/mansueto-institute/chainlink/issues
 
 If you are reporting a bug, please include:
 
@@ -33,7 +33,7 @@ chainlink could always use more documentation, whether as part of the official d
 
 ## Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/mansueto-institute/linkage/issues.
+The best way to send feedback is to file an issue at https://github.com/mansueto-institute/chainlink/issues.
 
 If you are proposing a new feature:
 
@@ -53,13 +53,13 @@ Please note this documentation assumes you already have `uv` and `Git` installed
 
 ```bash
 cd <directory_in_which_repo_should_be_created>
-git clone git@github.com:YOUR_NAME/linkage.git
+git clone git@github.com:YOUR_NAME/chainlink.git
 ```
 
 3. Now we need to install the environment. Navigate into the directory
 
 ```bash
-cd linkage
+cd chainlink
 ```
 
 Then, install and activate the environment with:

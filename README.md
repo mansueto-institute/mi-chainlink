@@ -5,11 +5,11 @@ A powerful, flexible framework for entity resolution and record linkage using Du
 
 This package enables you to load data from various sources, clean and standardize entity names and addresses, and create links between entities based on exact and fuzzy matching techniques.
 
-Source: https://github.com/mansueto-institute/linkage
+Source: https://github.com/mansueto-institute/chainlink
 
 Documentation: TK
 
-Issues: https://github.com/mansueto-institute/linkage/issues
+Issues: https://github.com/mansueto-institute/chainlink/issues
 
 ## Overview
 
@@ -27,8 +27,8 @@ The system is designed to be configurable through YAML files and supports increm
 
 ```bash
 # Clone the repository
-git clone https://github.com/mansueto-institute/linkage.git
-cd linkage
+git clone https://github.com/mansueto-institute/chainlink.git
+cd chainlink
 ```
 
 [Install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.

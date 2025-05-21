@@ -28,7 +28,7 @@ The system is designed to be configurable through YAML files and supports increm
 ```bash
 # Clone the repository
 git clone https://github.com/mansueto-institute/chainlink.git
-cd linkage
+cd chainlink
 ```
 
 [Install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
