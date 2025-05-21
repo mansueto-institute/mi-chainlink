@@ -59,8 +59,7 @@ jobs:
     - name: Build Python package distributions
       run: |
         mkdir -p dist
-        cd dist
-        uv build
+        uv build -o dist/ --wheel --sdist
       shell: bash
 
     - name: Publish package distributions to PyPI
