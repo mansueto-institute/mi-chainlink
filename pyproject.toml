@@ -38,7 +38,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://asteinhart.github.io/chainlink/"
-Repository = "https://github.com/mansueto-institute/linkage"
+Repository = "https://github.com/mansueto-institute/chainlink"
 Documentation = "https://asteinhart.github.io/chainlink/"
 
 [dependency-groups]

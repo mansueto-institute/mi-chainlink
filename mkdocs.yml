@@ -1,10 +1,10 @@
 site_name: chainlink
-repo_url: https://github.com/mansueto-institute/linkage
+repo_url: https://github.com/mansueto-institute/chainlink
 site_url: https://asteinhart.github.io/chainlink
 site_description: A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques.
 site_author: Mansueto Institute,Austin Steinhart
 edit_uri: edit/main/docs/
-repo_name: mansueto-institute/linkage
+repo_name: mansueto-institute/chainlink
 copyright: Maintained by <a href="https://asteinhart.com">asteinhart</a>.
 
 nav:
@@ -50,7 +50,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/mansueto-institute/linkage
+      link: https://github.com/mansueto-institute/chainlink
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/chainlink
 

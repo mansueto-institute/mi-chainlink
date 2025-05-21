@@ -1,47 +1,32 @@
 ### Bad Address Handling
 
-The framework can exclude known bad addresses from matching:
+The framework can exclude known bad addresses from matching by adding file paths to the configuration. This is useful for filtering out addresses that are known to be incorrect or problematic. The file should be a CSV with a header row with the first column containing the bad addresses.
 
-```python
-# Create a CSV with bad addresses
-bad_addresses = pd.DataFrame(["PO BOX", "GENERAL DELIVERY", "UNKNOWN"])
-bad_addresses.to_csv("data/bad_addresses.csv", index=False)
-
-# Update config
-config["options"]["bad_address_path"] = "data/bad_addresses.csv"
+```yaml
+options:
+  bad_address_path: data/bad_addresses.csv
+  ...
 ```
 
 ### Link Exclusions
 
-You can exclude specific types of links:
+You can exclude specific types of links from being created in the database. This is useful for filtering out certain types of matches that may not be relevant to your analysis. Include the link types you want to exclude in the configuration file.
 
-```python
-# Exclude certain match types
-config["options"]["link_exclusions"] = ["unit_match", "street_num_match"]
+```yaml:
+options:
+  link_exclusions:
+  - exclude_link_1
+  - exclude_link_2
+  ...
 ```
 
 ### Incremental Updates
 
-The framework supports incremental updates to an existing database:
+The framework supports incremental updates to an existing database. Change `overwrite_db` option to `false` in the configuration file. This allows you to add new data to the database without overwriting existing data.
 
-```python
-# First load
-chainlink(config)
+```yaml:
 
-# Add new data to config
-config["schemas"].append({
-    "schema_name": "nonprofit",
-    "tables": [
-        {
-            "table_name": "orgs",
-            "table_name_path": "data/nonprofits.csv",
-            "id_col": "org_id",
-            "name_cols": ["organization_name"],
-            "address_cols": ["org_address"]
-        }
-    ]
-})
-
-# Update database with new schema
-chainlink(config)
+options:
+  overwrite_db: false
+  ...
 ```

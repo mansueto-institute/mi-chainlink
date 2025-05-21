@@ -25,16 +25,14 @@ The system is designed to be configurable through YAML files and supports increm
 
 ## Installation
 
+Package is available on PyPI. You can install it using pip or uv:
+
 ```bash
-# Clone the repository
-git clone https://github.com/mansueto-institute/chainlink.git
-cd linkage
+pip install chainlink
 ```
 
-[Install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
-
 ```bash
-uv sync
+uv add chainlink
 ```
 
 
@@ -59,7 +57,7 @@ options:
   bad_address_path: data/bad_addresses.csv # path to a csv file with bad addresses that should not be matched
   export_tables: true # bool whether to export the tables to parquet files
   db_path: data/link.db # path to the resulting DuckDB database
-  overwrite_db: false # whether to force overwrite the existing database or add to existing tables
+  overwrite_db: true # whether to force overwrite the existing database or add to existing tables
   link_exclusions: # can specify exclusions for the matching process
   update_config_only: false # whether to update the config only
   load_only: false # whether to only load the data without matching
@@ -80,7 +78,7 @@ schemas:
         name_cols:
           - name2 # name column
         table_name: table2 # name of the table
-        table_name_path: data/schema1_table2.parquet # path to the table
+        table_name_path: data/import/schema1_table2.parquet # path to the table
   - schema_name: schema2 # name of the schema
     tables:
       - address_cols:
@@ -101,32 +99,57 @@ metadata:
 
 If you don't have a configuration file, the system will guide you through creating one:
 
-```bash
-python main.py
-# Enter config path. Type 'create' if you would you like to create one.
-create
-# Export tables to parquet after load? (y/n)
-y
-# [Optional] Provide path to bad address csv file:
+``` bash
+> Enter config path. [Leave blank if you would you like to create a new one]
+
+> Enter the path to the resulting database [db/linked.db]:
+data/property_linkage.db
+
+> Only clean and load data to the database (without matching)? [y/N]: n
+
+> Run probabilisitic name and address matching? [y/N]: y
+
+> Export tables to parquet after load? [y/N]: y
+
+> [Optional] Provide path to bad address csv file
 data/bad_addresses.csv
-# Add a new schema? (y/n)
-y
-# Enter the name of the schema:
-property
-# Enter the name of dataset:
-parcels
-# Enter the path to the dataset:
-data/parcels.csv
-# Enter the id column of the dataset. Must be unique:
-parcel_id
-# Enter the name column(s) (comma separated):
-owner_name,taxpayer_name
-# Enter the address column(s) (comma separated):
-property_address,mailing_address
-# Add a table to this schema? (y/n)
-n
-# Add another schema? (y/n)
-n
+
+> Add a new schema? [Y/n]: y
+
+> Enter the name of the schema [main]: property
+
+> Enter the name of dataset: [dataset]: assessor
+> Enter the path to the dataset: data/assessor_data.csv
+> Enter the id column of the dataset. Must be unique: pin
+> Enter the name column(s) (comma separated): taxpayer_name, owner_name
+> Enter the address column(s) (comma separated): property_address, mailing_address
+
+> Add another table to this schema? [y/N]: y
+
+> Enter the name of dataset: [dataset]: permits
+> Enter the path to the dataset: data/permit_records.parquet
+> Enter the id column of the dataset. Must be unique: permit_id
+> Enter the name column(s) (comma separated): applicant_name
+> Enter the address column(s) (comma separated): property_address
+
+> Add another table to this schema? [y/N]: n
+
+> Schema added successfully!
+
+> Add another schema? [y/N]: y
+
+> Enter the name of the schema [main]: businesses
+> Enter the name of dataset: [dataset]: licenses
+> Enter the path to the dataset: data/business_licenses.csv
+> Enter the id column of the dataset. Must be unique: license_num
+> Enter the name column(s) (comma separated): business_name, dba_name
+> Enter the address column(s) (comma separated): address
+
+> Add another table to this schema? [y/N]: n
+
+> Schema added successfully!
+
+> Add another schema? [y/N]: n
 ```
 
 
@@ -141,7 +164,6 @@ The framework loads data from CSV or Parquet files as specified in the configura
 - Cleans entity names and addresses
 - Creates unique IDs for names, addresses, streets, and street names
 - Loads data into the specified schema in the DuckDB database
-
 
 ### 2. Creating Links
 
@@ -166,10 +188,10 @@ If enabled, the framework also creates fuzzy matches using TF-IDF:
   1. Computes similarity scores between entities
   1. Stores matches above a threshold (0.8 by default)
 - Addresses
-  1. Generates TF-IDF vectors for all entity addresses
+  1. Generates TF-IDF vectors for all entity addresses using `number + direction + fuzzy(street_name) + street_post_type`
   1. Computes similarity scores between entities
   1. Stores matches above a threshold (0.8 by default)
 
 ### 3. Exporting Results
 
-If configured, the framework exports all tables to Parquet files in the specified directory.
+If configured, the framework exports all tables to Parquet files in `data/export/` directory.
