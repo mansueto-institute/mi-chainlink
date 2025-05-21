@@ -38,11 +38,10 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
+      contents: read
     steps:
       - name: Check out
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
