@@ -38,12 +38,23 @@ jobs:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
     steps:
-      # retrieve your distributions here
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: ${{ inputs.uv-version }}
+        enable-cache: "true"
+        cache-suffix: ${{ matrix.python-version }}
 
+    - name: Build Python package distributions
+      run: uv build
+      shell: bash
 
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
   deploy-docs:
     # needs: publish
