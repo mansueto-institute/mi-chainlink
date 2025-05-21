@@ -200,7 +200,6 @@ def clean_address(raw: str) -> dict:
             "street": None,
         }
 
-
     FIELD_NAMES = [
         "AddressNumber",
         "StreetNamePreDirectional",
@@ -313,7 +312,6 @@ def clean_address(raw: str) -> dict:
         # Force everything to a Python string:
         if not isinstance(v, str):
             record[k] = str(v)
-
 
     return record
 

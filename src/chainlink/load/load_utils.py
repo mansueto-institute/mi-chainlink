@@ -85,7 +85,8 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             console.log(f"[yellow] Cleaning address column {col}")
 
             df = df.with_columns(
-                pl.col(col).fill_null("").alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
+                pl.col(col).fill_null("").alias(raw_address),
+                pl.col(col).fill_null("").str.to_uppercase().alias(temp_address),
             )
             df = df.with_columns(
                 pl.col(temp_address).map_elements(
