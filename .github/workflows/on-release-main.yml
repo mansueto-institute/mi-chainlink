@@ -59,6 +59,7 @@ jobs:
     - name: Build Python package distributions
       run: |
         mkdir -p dist
+        cd dist
         uv build
       shell: bash
 
