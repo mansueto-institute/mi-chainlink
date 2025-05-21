@@ -39,33 +39,33 @@ jobs:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download pyproject.toml
-      uses: actions/download-artifact@v4
-      with:
-        name: pyproject-toml
-        
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - uses: actions/checkout@v4
+      
+      - name: Download pyproject.toml
+        uses: actions/download-artifact@v4
+        with:
+          name: pyproject-toml
+          
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
-      with:
-        version: latest
-        enable-cache: "true"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: latest
+          enable-cache: "true"
 
-    - name: Build Python package distributions
-      run: |
-        mkdir -p dist
-        uv build -o dist/ --wheel --sdist
-      shell: bash
+      - name: Build Python package distributions
+        run: |
+          mkdir -p dist
+          uv build -o dist/ --wheel --sdist
+        shell: bash
 
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        packages-dir: dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
 
   deploy-docs:
     # needs: publish
