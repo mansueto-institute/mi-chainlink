@@ -3,13 +3,13 @@ name: release-main
 on:
   release:
     types: [published]
-    branches: [main]
 
 jobs:
   set-version:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
 
       - name: Export tag
         id: vars
@@ -39,16 +39,24 @@ jobs:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: 3.12
       
       - name: Download pyproject.toml
         uses: actions/download-artifact@v4
         with:
           name: pyproject-toml
           
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.12'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v2
