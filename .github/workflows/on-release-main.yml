@@ -29,29 +29,21 @@ jobs:
           name: pyproject-toml
           path: pyproject.toml
 
-  # publish:
-  #   runs-on: ubuntu-latest
-  #   needs: [set-version]
-  #   steps:
-  #     - name: Check out
-  #       uses: actions/checkout@v4
+  pypi-publish:
+    name: upload release to PyPI
+    runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
+    steps:
+      # retrieve your distributions here
 
-  #     - name: Set up the environment
-  #       uses: ./.github/actions/setup-python-env
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
-  #     - name: Download updated pyproject.toml
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: pyproject-toml
 
-  #     - name: Build package
-  #       run: uvx --from build pyproject-build --installer uv
-
-  #     - name: Publish package
-  #       run: uvx twine upload dist/*
-  #       env:
-  #         TWINE_USERNAME: __token__
-  #         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
   deploy-docs:
     # needs: publish
