@@ -60,8 +60,11 @@ dev = [
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project.scripts]
-mi-chainlink = "mi_chainlink.main:app"
+chainlink = "mi_chainlink.main:app"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["pyarrow", "python-levenshtein", "sqlalchemy-mate"]
