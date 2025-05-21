@@ -85,25 +85,25 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             console.log(f"[yellow] Cleaning address column {col}")
 
             df = df.with_columns(
-                pl.col(col).alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
+                pl.col(col).fill_null("").alias(raw_address), pl.col(col).fill_null("").str.to_uppercase().alias(temp_address)
             )
             df = df.with_columns(
                 pl.col(temp_address).map_elements(
                     clean_address,
                     return_dtype=pl.Struct([
-                        pl.Field("raw", pl.String),
-                        pl.Field("address_number", pl.String),
-                        pl.Field("street_pre_directional", pl.String),
-                        pl.Field("street_name", pl.String),
-                        pl.Field("street_post_type", pl.String),
-                        pl.Field("unit_type", pl.String),
-                        pl.Field("unit_number", pl.String),
-                        pl.Field("subaddress_type", pl.String),
-                        pl.Field("subaddress_identifier", pl.String),
-                        pl.Field("city", pl.String),
-                        pl.Field("state", pl.String),
-                        pl.Field("postal_code", pl.String),
-                        pl.Field("street", pl.String),
+                        pl.Field("raw", pl.Utf8),
+                        pl.Field("address_number", pl.Utf8),
+                        pl.Field("street_pre_directional", pl.Utf8),
+                        pl.Field("street_name", pl.Utf8),
+                        pl.Field("street_post_type", pl.Utf8),
+                        pl.Field("unit_type", pl.Utf8),
+                        pl.Field("unit_number", pl.Utf8),
+                        pl.Field("subaddress_type", pl.Utf8),
+                        pl.Field("subaddress_identifier", pl.Utf8),
+                        pl.Field("city", pl.Utf8),
+                        pl.Field("state", pl.Utf8),
+                        pl.Field("postal_code", pl.Utf8),
+                        pl.Field("street", pl.Utf8),
                     ]),
                 )
             )

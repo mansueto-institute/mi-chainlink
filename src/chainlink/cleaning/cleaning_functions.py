@@ -183,6 +183,23 @@ def clean_address(raw: str) -> dict:
     Returns:
         dict: A dictionary of address components.
     """
+    if not isinstance(raw, str) or raw == "":
+        return {
+            "raw": raw,
+            "address_number": None,
+            "street_pre_directional": None,
+            "street_name": None,
+            "street_post_type": None,
+            "unit_type": None,
+            "unit_number": None,
+            "subaddress_type": None,
+            "subaddress_identifier": None,
+            "city": None,
+            "state": None,
+            "postal_code": None,
+            "street": None,
+        }
+
 
     FIELD_NAMES = [
         "AddressNumber",
@@ -227,6 +244,7 @@ def clean_address(raw: str) -> dict:
                 tags[label] = value
 
     record = {
+        "raw": raw,
         "address_number": tags.get("AddressNumber"),
         "street_pre_directional": tags.get("StreetNamePreDirectional"),
         "street_name": tags.get("StreetName"),
@@ -289,7 +307,13 @@ def clean_address(raw: str) -> dict:
     for key, value in record.items():
         record[key] = None if value == "" else value
 
-    record["raw"] = raw
+    for k, v in record.items():
+        if v is None:
+            continue
+        # Force everything to a Python string:
+        if not isinstance(v, str):
+            record[k] = str(v)
+
 
     return record
 
