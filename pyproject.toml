@@ -1,5 +1,5 @@
 [project]
-name = "chainlink"
+name = "mi-chainlink"
 version = "0.0.5"
 description = "A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques."
 authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart@uchicago.edu" }]
@@ -61,7 +61,7 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-chainlink = "chainlink.main:app"
+mi-chainlink = "mi_chainlink.main:app"
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["pyarrow", "python-levenshtein", "sqlalchemy-mate"]
