@@ -14,7 +14,14 @@ from chainlink.link.link_generic import (
 )
 from chainlink.link.link_utils import generate_tfidf_links
 from chainlink.load.load_generic import load_generic
-from chainlink.utils import console, create_config, export_tables, load_config, logger, update_config
+from chainlink.utils import (
+    console,
+    create_config,
+    export_tables,
+    load_config,
+    logger,
+    update_config,
+)
 
 # parent path
 DIR = pathlib.Path(__file__).parent
@@ -63,8 +70,8 @@ def chainlink(
             table["id_col"] = table["id_col"].lower().replace(" ", "_")
 
     # handle options
-    force_db_create = config["options"].get("force_db_create", False)
-    if force_db_create and os.path.exists(db_path):
+    overwrite_db = config["options"].get("overwrite_db", False)
+    if overwrite_db and os.path.exists(db_path):
         os.remove(db_path)
         console.print(f"[red] Removed existing database at {db_path}")
         logger.info(f"Removed existing database at {db_path}")
@@ -102,7 +109,7 @@ def chainlink(
         schema_name = schema_config["schema_name"]
 
         # if not force create, check if each col exists, and skip if so
-        if not force_db_create:
+        if not overwrite_db:
             if df_db_columns.filter(pl.col("schema") == schema_name).shape[0] == 0:
                 new_schemas.append(schema_name)
         else:
@@ -138,7 +145,9 @@ def chainlink(
                     generate_tfidf_links(db_path, table_location="entity.name_similarity")
                 if not no_addresses:
                     generate_tfidf_links(
-                        db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
+                        db_path,
+                        table_location="entity.street_name_similarity",
+                        source_table_name="entity.street_name",
                     )
 
         # for across link

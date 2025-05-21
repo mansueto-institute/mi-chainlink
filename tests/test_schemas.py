@@ -32,7 +32,7 @@ CONFIG_SIMPLE_2 = {
 CONFIG_SIMPLE = {
     "options": {
         "db_path": "tests/db/test_simple.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
@@ -40,7 +40,7 @@ CONFIG_SIMPLE = {
 
 CONFIG_SIMPLE_CREATE = {
     "options": {
-        "force_db_create": False,
+        "overwrite_db": False,
         "export_tables": False,
         "update_config_only": False,
         "link_exclusions": [],
@@ -95,7 +95,7 @@ CONFIG_SMALL_PARCEL = {
 CONFIG_SMALL = {
     "options": {
         "db_path": "tests/db/test_small.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
@@ -108,7 +108,7 @@ CONFIG_SMALL_INVALID = {
 CONFIG_NON_UNIQUE = {
     "options": {
         "db_path": "tests/db/test_non_unique.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [

@@ -52,7 +52,7 @@ CONFIG_SIMPLE_MISSING_SCHEMA = {
 CONFIG_SIMPLE = {
     "options": {
         "db_path": "tests/db/test_simple.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
@@ -81,7 +81,7 @@ CONFIG_SIMPLE_CROSS_SCHEMA = {
 CONFIG_SIMPLE_CROSS = {
     "options": {
         "db_path": "tests/db/test_simple_cross.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SIMPLE_CROSS_SCHEMA],
@@ -90,7 +90,7 @@ CONFIG_SIMPLE_CROSS = {
 CONFIG_SIMPLE_MISSING = {
     "options": {
         "db_path": "tests/db/test_simple.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_MISSING_SCHEMA],
@@ -125,7 +125,7 @@ CONFIG_SMALL_PARCEL = {
 CONFIG_SMALL = {
     "options": {
         "db_path": "tests/db/test_small.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_SMALL_LLC, CONFIG_SMALL_PARCEL],
@@ -134,7 +134,7 @@ CONFIG_SMALL = {
 CONFIG_SMALL_LINK_EXCLUSION = {
     "options": {
         "db_path": "tests/db/test_small_link_exclusion.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
         "link_exclusions": ["parcel_parcel_tax_payer_name_parcel_parcel_tax_payer_name_name_match"],
     },
@@ -158,7 +158,7 @@ CONFIG_TWO_COLUMNS_SCHEMA = {
 CONFIG_TWO_COLUMNS = {
     "options": {
         "db_path": "tests/db/test_two_columns.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_TWO_COLUMNS_SCHEMA],
@@ -188,7 +188,7 @@ CONFIG_MULTIPLE_TABLES_SCHEMA = {
 CONFIG_MULTIPLE_TABLES = {
     "options": {
         "db_path": "tests/db/test_multiple_tables.db",
-        "force_db_create": True,
+        "overwrite_db": True,
         "probabilistic": True,
     },
     "schemas": [CONFIG_MULTIPLE_TABLES_SCHEMA],
@@ -824,7 +824,7 @@ def test_not_force_db():
     CONFIG_SIMPLE_PT1 = {
         "options": {
             "db_path": "tests/db/test_force_db.db",
-            "force_db_create": True,
+            "overwrite_db": True,
             "probabilistic": True,
         },
         "schemas": [CONFIG_SIMPLE_1],
@@ -832,7 +832,7 @@ def test_not_force_db():
     CONFIG_SIMPLE_PT2_A = {
         "options": {
             "db_path": "tests/db/test_force_db.db",
-            "force_db_create": False,
+            "overwrite_db": False,
             "probabilistic": True,
         },
         "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
@@ -841,7 +841,7 @@ def test_not_force_db():
     CONFIG_SIMPLE_PT2_B = {
         "options": {
             "db_path": "tests/db/test_force_db.db",
-            "force_db_create": False,
+            "overwrite_db": False,
             "probabilistic": True,
         },
         "schemas": [CONFIG_SIMPLE_1_AMENDED, CONFIG_SIMPLE_2],
@@ -850,7 +850,7 @@ def test_not_force_db():
     CONFIG_SIMPLE_PT3 = {
         "options": {
             "db_path": "tests/db/test_force_db.db",
-            "force_db_create": True,
+            "overwrite_db": True,
             "probabilistic": True,
         },
         "schemas": [CONFIG_SIMPLE_1_AMENDED, CONFIG_SIMPLE_2],
@@ -972,7 +972,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
         )
-    ).item().to_list() == [0, 1, 1, 0]
+    ).item().to_list() == [
+        0,
+        1,
+        1,
+        0,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "4")).select(
         pl.concat_list(
@@ -981,7 +986,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 0, 0]
+    ).item().to_list() == [
+        1,
+        1,
+        0,
+        0,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "2") & (pl.col("test_simple1_id_2") == "4")).select(
         pl.concat_list(
@@ -990,7 +1000,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test1_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test1_name2_name_match"),
         )
-    ).item().to_list() == [0, 0, 1, 1]
+    ).item().to_list() == [
+        0,
+        0,
+        1,
+        1,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "5")).select(
         pl.concat_list(
@@ -999,7 +1014,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 0, 0]
+    ).item().to_list() == [
+        1,
+        1,
+        0,
+        0,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "2") & (pl.col("test_simple1_id_2") == "5")).select(
         pl.concat_list(
@@ -1008,7 +1028,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
         )
-    ).item().to_list() == [0, 0, 1, 1]
+    ).item().to_list() == [
+        0,
+        0,
+        1,
+        1,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "4") & (pl.col("test_simple1_id_2") == "5")).select(
         pl.concat_list(
@@ -1017,7 +1042,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 1, 1]
+    ).item().to_list() == [
+        1,
+        1,
+        1,
+        1,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "3") & (pl.col("test_simple1_id_2") == "7")).select(
         pl.concat_list(
@@ -1026,7 +1056,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test1_name2_test_simple1_test2_name1_name_match"),
             pl.col("test_simple1_test1_name2_test_simple1_test2_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 1, 1]
+    ).item().to_list() == [
+        1,
+        1,
+        1,
+        1,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "7")).select(
         pl.concat_list(
@@ -1035,7 +1070,12 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test2_name2_test_simple1_test2_name1_name_match"),
             pl.col("test_simple1_test2_name2_test_simple1_test2_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 0, 0]
+    ).item().to_list() == [
+        1,
+        1,
+        0,
+        0,
+    ]
 
     assert df.filter((pl.col("test_simple1_id_1") == "1") & (pl.col("test_simple1_id_2") == "3")).select(
         pl.concat_list(
@@ -1044,4 +1084,9 @@ def test_simple_cross(make_simple_cross_db):
             pl.col("test_simple1_test2_name2_test_simple1_test1_name1_name_match"),
             pl.col("test_simple1_test2_name2_test_simple1_test1_name2_name_match"),
         )
-    ).item().to_list() == [1, 1, 0, 0]
+    ).item().to_list() == [
+        1,
+        1,
+        0,
+        0,
+    ]

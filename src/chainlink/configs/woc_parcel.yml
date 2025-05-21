@@ -1,7 +1,7 @@
 options:
   bad_address_path: data/bad_addresses.csv
   export_tables: false # bool whether to export the tables to csv files
-  force_db_create: true # whether to force overwrite the existing database or add to existing tables
+  overwrite_db: true # whether to force overwrite the existing database or add to existing tables
   link_exclusions: 
   update_config_only: false # whether to update the config only
 schemas:

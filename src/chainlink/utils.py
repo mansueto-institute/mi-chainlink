@@ -61,7 +61,7 @@ def validate_config(config: dict) -> bool:
                 "type": "object",
                 "required": ["db_path"],
                 "properties": {
-                    "force_db_create": {"type": "boolean"},
+                    "overwrite_db": {"type": "boolean"},
                     "export_tables": {"type": "boolean"},
                     "update_config_only": {"type": "boolean"},
                     "link_exclusions": {"type": ["array", "null"]},  # or none
@@ -253,7 +253,7 @@ def create_config() -> dict:
     else:
         config = {
             "options": {
-                "force_db_create": False,
+                "overwrite_db": False,
                 "export_tables": False,
                 "update_config_only": False,
                 "link_exclusions": [],
@@ -265,16 +265,22 @@ def create_config() -> dict:
         }
         # build config with user input
         config["options"]["db_path"] = Prompt.ask(
-            "[green]> Enter the path to the resulting database", default="db/linked.db", show_default=True
+            "[green]> Enter the path to the resulting database",
+            default="db/linked.db",
+            show_default=True,
         )
 
         config["options"]["load_only"] = Confirm.ask(
-            "[green]> Only clean and load data to the database (without matching)?", show_default=True, default=False
+            "[green]> Only clean and load data to the database (without matching)?",
+            show_default=True,
+            default=False,
         )
 
         if not config["options"]["load_only"]:
             config["options"]["probablistic"] = Confirm.ask(
-                "[green]> Run probabilisitic name and address matching?", show_default=True, default=False
+                "[green]> Run probabilisitic name and address matching?",
+                show_default=True,
+                default=False,
             )
 
         config["options"]["export_tables"] = Confirm.ask(

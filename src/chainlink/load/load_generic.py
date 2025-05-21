@@ -69,26 +69,6 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             for col in table_config.get("address_cols_og", ""):
                 all_columns.append(col)
 
-            # check if columns exist and remove from config if not
-            # TODO never can run because of validate_input_data() is that correct?
-
-            # for col in all_columns:
-            #     if col not in df.columns:
-            #         if col in table_config["name_cols_og"]:
-            #             table_config["name_cols_og"].remove(col)
-            #             table_config["name_cols"].remove(col.lower().replace(" ", "_"))
-            #         elif col in table_config["address_cols_og"]:
-            #             table_config["address_cols_og"].remove(col)
-            #             table_config["address_cols"].remove(
-            #                 col.lower().replace(" ", "_")
-            #             )
-            #         console.log(
-            #             f"[yellow] Column {col} not found in file {file_path}. Removing from config"
-            #         )
-            #         logger.debug(
-            #             f"Column {col} not found in file {file_path}. Removing from config"
-            #         )
-
             # Make headers snake case
             df.columns = [x.lower().replace(" ", "_") for x in df.columns]
             # df.columns = df.columns.str, regex=True)

@@ -106,10 +106,6 @@ def execute_match(
         ;"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
-        db_conn.execute("""
-        SET memory_limit = '175GB';
-        SET threads = 4;
-        """)
         db_conn.execute(matching_query)
         console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
@@ -204,20 +200,6 @@ def execute_match_address(
         skip_address=skip_address,
         link_exclusions=link_exclusions,
     )
-    ## match street name and number if zipcode matches
-    # execute_match_street_name_and_num(
-    #     db_path=db_path,
-    #     left_entity=left_entity,
-    #     right_entity=right_entity,
-    #     left_table=left_table,
-    #     left_address=left_address,
-    #     left_ent_id=left_ent_id,
-    #     right_table=right_table,
-    #     right_address=right_address,
-    #     right_ent_id=right_ent_id,
-    #     skip_address=skip_address,
-    #     link_exclusions=link_exclusions,
-    # )
 
 
 # EXECUTE MATCH HELPERS
@@ -411,125 +393,13 @@ def execute_match_unit(
     return None
 
 
-def execute_match_street_name_and_num(
-    db_path: str | Path,
-    left_entity: str,
-    left_table: str,
-    left_address: str,
-    left_ent_id: str,
-    right_entity: str,
-    right_table: str,
-    right_address: str,
-    right_ent_id: str,
-    skip_address: bool = False,
-    link_exclusions: Optional[list] = None,
-) -> None:
-    """
-    Match street name and number if zipcode matches.
-
-    Creates a match column called
-    {left_entity}_{left_table}_{left_address}_{right_entity}_{right_table}_{right_address}_street_num_match
-    and appends to link table link.{left_entity}_{right_entity}
-    """
-    if link_exclusions is None:
-        link_exclusions = []
-
-    # if two different ids just dont want duplicates
-    matching_condition = "!="
-
-    if left_ent_id == right_ent_id and left_entity == right_entity:
-        left_ent_id_edit = f"{left_ent_id}_1"
-        right_ent_id_edit = f"{right_ent_id}_2"
-        # if same id, only want one direction of matches
-        matching_condition = "<"
-    else:
-        left_ent_id_edit = left_ent_id
-        right_ent_id_edit = right_ent_id
-
-    link_table = f"link.{left_entity}_{right_entity}"
-    # align the names of the match columns
-    left_side = f"{left_entity}_{left_table}_{left_address}"
-    right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_street_num_match"
-    else:
-        match_name_col = f"{right_side}_{left_side}_street_num_match"
-
-    # check link exclusion
-    if any(exclusion in match_name_col for exclusion in link_exclusions):
-        return None
-
-    if skip_address:
-        address_condition = " != 1"
-        left_address_condition = f"{left_address}_skip {address_condition}"
-        right_address_condition = f"{right_address}_skip {address_condition}"
-    else:
-        left_address_condition = "TRUE"
-        right_address_condition = "TRUE"
-
-    temp_table = match_name_col + "_table"
-
-    matching_query = f"""CREATE OR REPLACE TABLE link.{temp_table} AS
-
-            with lhs as (
-                SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
-                        {left_address}_postal_code,
-                        {left_address}_address_number,
-                        {left_address}_street_name_id
-                FROM {left_entity}.{left_table}
-                WHERE {left_address}_address_number IS NOT NULL
-                AND {left_address}_street_name_id IS NOT NULL
-                and {left_address_condition}
-            )
-
-            , rhs as (
-                SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
-                        {right_address}_postal_code,
-                        {right_address}_address_number,
-                        {right_address}_street_name_id
-                FROM {right_entity}.{right_table}
-                WHERE {right_address}_address_number IS NOT NULL
-                AND {right_address}_street_name_id IS NOT NULL
-                and {right_address_condition}
-            )
-
-            ,final as (
-            SELECT DISTINCT lhs.{left_entity}_{left_ent_id_edit},
-                            rhs.{right_entity}_{right_ent_id_edit},
-                            1 AS {match_name_col}
-            FROM lhs
-            INNER JOIN rhs
-            on lhs.{left_address}_postal_code = rhs.{right_address}_postal_code
-            and lhs.{left_address}_address_number = rhs.{right_address}_address_number
-            and lhs.{left_address}_street_name_id = rhs.{right_address}_street_name_id
-            )
-
-            SELECT *
-            from final
-            WHERE {left_entity}_{left_ent_id_edit} {matching_condition} {right_entity}_{right_ent_id_edit};"""
-
-    with duckdb.connect(database=db_path, read_only=False) as db_conn:
-        db_conn.execute(matching_query)
-        console.log(f"[yellow] Created {match_name_col}")
-        logger.debug(f"Created {match_name_col}")
-
-        execute_match_processing(
-            db_conn=db_conn,
-            link_table=link_table,
-            out_temp_table_name=temp_table,
-            id_col_1=f"{left_entity}_{left_ent_id_edit}",
-            match_name_col=match_name_col,
-            id_col_2=f"{right_entity}_{right_ent_id_edit}",
-        )
-
-    return None
-
-
 # FUZZY MATCHING UTILS
 
 
 def generate_tfidf_links(
-    db_path: str | Path, table_location: str = "entity.name_similarity", source_table_name: str | None = None
+    db_path: str | Path,
+    table_location: str = "entity.name_similarity",
+    source_table_name: str | None = None,
 ) -> None:
     """
     create a table of tfidf matches between two entities and adds to db

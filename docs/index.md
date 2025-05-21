@@ -59,7 +59,7 @@ options:
   bad_address_path: data/bad_addresses.csv # path to a csv file with bad addresses that should not be matched
   export_tables: true # bool whether to export the tables to parquet files
   db_path: data/link.db # path to the resulting DuckDB database
-  force_db_create: false # whether to force overwrite the existing database or add to existing tables
+  overwrite_db: false # whether to force overwrite the existing database or add to existing tables
   link_exclusions: # can specify exclusions for the matching process
   update_config_only: false # whether to update the config only
   load_only: false # whether to only load the data without matching
