@@ -1,6 +1,6 @@
 [project]
 name = "mi-chainlink"
-version = "0.0.5"
+version = "0.0.6"
 description = "A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques."
 authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart@uchicago.edu" }]
 readme = "README.md"
