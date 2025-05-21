@@ -38,7 +38,7 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
 
         if table_config.get("name_cols"):
             # generate name matches combos
-            name_combos = list(itertools.combinations_with_replacement(table_config["name_cols"], 2))
+            name_combos = list(itertools.product(table_config["name_cols"], repeat=2))
 
             for left_name, right_name in name_combos:
                 execute_match(
@@ -59,7 +59,7 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
 
         if table_config.get("address_cols"):
             # address within
-            address_combos = list(itertools.combinations_with_replacement(table_config["address_cols"], 2))
+            address_combos = list(itertools.product(table_config["address_cols"], repeat=2))
 
             for left_address, right_address in address_combos:
                 execute_match_address(
@@ -243,7 +243,7 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
 
     for table in schema_config["tables"]:
         # generate name matches combos
-        name_combos = list(itertools.combinations_with_replacement(table["name_cols"], 2))
+        name_combos = list(itertools.product(table["name_cols"], repeat=2))
 
         for left_name, right_name in name_combos:
             execute_fuzzy_link(

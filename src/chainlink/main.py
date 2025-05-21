@@ -14,12 +14,17 @@ from chainlink.link.link_generic import (
 )
 from chainlink.link.link_utils import generate_tfidf_links
 from chainlink.load.load_generic import load_generic
-from chainlink.utils import console, create_config, export_tables, load_config, logger, update_config
+from chainlink.utils import (
+    console,
+    create_config,
+    export_tables,
+    load_config,
+    logger,
+    update_config,
+)
 
 # parent path
 DIR = pathlib.Path(__file__).parent
-
-app = typer.Typer()
 
 app = typer.Typer()
 
@@ -41,16 +46,21 @@ def chainlink(
     load_only = config["options"].get("load_only", False)
     db_path = config["options"].get("db_path", DIR / "db/linked.db")
 
+    no_names = True
+    no_addresses = True
+
     # create snake case columns
     for schema in config["schemas"]:
         for table in schema["tables"]:
-            if table["name_cols"] is not None:
+            if len(table["name_cols"]) > 0:
+                no_names = False
                 table["name_cols_og"] = table["name_cols"]
                 table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
             else:
                 table["name_cols"] = []
 
-            if table["address_cols"] is not None:
+            if len(table["address_cols"]) > 0:
+                no_addresses = False
                 table["address_cols_og"] = table["address_cols"]
                 table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
             else:
@@ -60,8 +70,8 @@ def chainlink(
             table["id_col"] = table["id_col"].lower().replace(" ", "_")
 
     # handle options
-    force_db_create = config["options"].get("force_db_create", False)
-    if force_db_create and os.path.exists(db_path):
+    overwrite_db = config["options"].get("overwrite_db", False)
+    if overwrite_db and os.path.exists(db_path):
         os.remove(db_path)
         console.print(f"[red] Removed existing database at {db_path}")
         logger.info(f"Removed existing database at {db_path}")
@@ -99,29 +109,9 @@ def chainlink(
         schema_name = schema_config["schema_name"]
 
         # if not force create, check if each col exists, and skip if so
-        if not force_db_create:
-            for table in schema_config["tables"]:
-                # if no existing tables, then empty db_columns
-                try:
-                    db_columns = (
-                        df_db_columns[
-                            (df_db_columns["schema"] == schema_name) & (df_db_columns["name"] == table["table_name"])
-                        ]["column_names"]
-                        .values[0]
-                        .tolist()
-                    )
-                except Exception:
-                    db_columns = []
-
-                columns = list(table["name_cols"])
-                columns += list(table["address_cols"])
-
-                # if all columns are in df_db_columns then continue
-                if not all(col in db_columns for col in columns):
-                    new_schemas.append(schema_name)
-                else:
-                    print(f"Skipping schema {schema_name}")
-                    logger.debug(f"Skipping schema {schema_name}")
+        if not overwrite_db:
+            if df_db_columns.filter(pl.col("schema") == schema_name).shape[0] == 0:
+                new_schemas.append(schema_name)
         else:
             new_schemas.append(schema_name)
 
@@ -151,10 +141,14 @@ def chainlink(
         # only if there are new schemas added
         if len(new_schemas) > 0:
             with console.status("[bold yellow] Working on fuzzy matching scores") as status:
-                generate_tfidf_links(db_path, table_location="entity.name_similarity")
-                generate_tfidf_links(
-                    db_path, table_location="entity.street_name_similarity", source_table_name="entity.street_name"
-                )
+                if not no_names:
+                    generate_tfidf_links(db_path, table_location="entity.name_similarity")
+                if not no_addresses:
+                    generate_tfidf_links(
+                        db_path,
+                        table_location="entity.street_name_similarity",
+                        source_table_name="entity.street_name",
+                    )
 
         # for across link
         links = []

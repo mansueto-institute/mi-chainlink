@@ -1,5 +1,9 @@
+import multiprocessing
 import re
+from concurrent.futures import ProcessPoolExecutor
+from math import ceil
 
+import polars as pl
 import us
 import usaddress
 from scourgify import normalize_address_record
@@ -118,6 +122,55 @@ def identify_state_city(zipcode: str) -> tuple:
         return (None, None)
 
 
+def clean_address_batch(address_batch: list[str]) -> list[dict]:
+    return [clean_address(addr) for addr in address_batch]
+
+
+def clean_address_batch_parser(df_batch: pl.Series) -> pl.Series:
+    # 2) Pull the batch into Python for parallel parsing
+    addresses = df_batch.to_list()
+
+    # 3) Spin up one process per core (or core-1)
+    n_workers = multiprocessing.cpu_count()
+
+    def chunk_list(lst: list, n_chunks: int) -> list[list]:
+        chunk_size = ceil(len(lst) / n_chunks)
+        return [lst[i : i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
+    chunks = chunk_list(addresses, n_workers)
+
+    with ProcessPoolExecutor(max_workers=n_workers) as exe:
+        results = exe.map(clean_address_batch, chunks)
+
+    # Flatten the list of lists
+    parsed_dicts = [item for sublist in results for item in sublist]
+
+    # 4) Build a Polars DataFrame of the parsed results
+    parsed_df = pl.DataFrame(
+        parsed_dicts,
+        schema={
+            "raw": pl.String,
+            "address_number": pl.String,
+            "street_pre_directional": pl.String,
+            "street_name": pl.String,
+            "street_post_type": pl.String,
+            "unit_type": pl.String,
+            "unit_number": pl.String,
+            "subaddress_type": pl.String,
+            "subaddress_identifier": pl.String,
+            "city": pl.String,
+            "state": pl.String,
+            "postal_code": pl.String,
+            "street": pl.String,
+        },
+    )
+
+    # 5) Re-attach the original address for the join key
+    parsed_struct = parsed_df.select(pl.struct(pl.all()).alias("address_struct")).to_series(0)
+
+    return parsed_struct
+
+
 def clean_address(raw: str) -> dict:
     """
     Given a raw address, first conduct baseline address cleaning, then
@@ -130,6 +183,22 @@ def clean_address(raw: str) -> dict:
     Returns:
         dict: A dictionary of address components.
     """
+    if not isinstance(raw, str) or raw == "":
+        return {
+            "raw": raw,
+            "address_number": None,
+            "street_pre_directional": None,
+            "street_name": None,
+            "street_post_type": None,
+            "unit_type": None,
+            "unit_number": None,
+            "subaddress_type": None,
+            "subaddress_identifier": None,
+            "city": None,
+            "state": None,
+            "postal_code": None,
+            "street": None,
+        }
 
     FIELD_NAMES = [
         "AddressNumber",
@@ -174,6 +243,7 @@ def clean_address(raw: str) -> dict:
                 tags[label] = value
 
     record = {
+        "raw": raw,
         "address_number": tags.get("AddressNumber"),
         "street_pre_directional": tags.get("StreetNamePreDirectional"),
         "street_name": tags.get("StreetName"),
@@ -235,6 +305,13 @@ def clean_address(raw: str) -> dict:
 
     for key, value in record.items():
         record[key] = None if value == "" else value
+
+    for k, v in record.items():
+        if v is None:
+            continue
+        # Force everything to a Python string:
+        if not isinstance(v, str):
+            record[k] = str(v)
 
     return record
 

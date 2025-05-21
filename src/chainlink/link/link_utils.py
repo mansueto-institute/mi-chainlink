@@ -53,10 +53,13 @@ def execute_match(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_matching_col}"
     right_side = f"{right_entity}_{right_table}_{right_matching_col}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_{match_type}"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name_col = f"{left_side}_{right_side}_{match_type}"
+        else:
+            match_name_col = f"{right_side}_{left_side}_{match_type}"
     else:
-        match_name_col = f"{right_side}_{left_side}_{match_type}"
+        match_name_col = f"{left_side}_{right_side}_{match_type}"
 
     # check link exclusion
     if any(exclusion in match_name_col for exclusion in link_exclusions):
@@ -64,11 +67,15 @@ def execute_match(
 
     if skip_address:
         address_condition = " != 1"
-        left_address_condition = f"{left_matching_col}_skip {address_condition}"
-        right_address_condition = f"{right_matching_col}_skip {address_condition}"
+        left_address_condition = f"l.{left_matching_col}_skip {address_condition}"
+        right_address_condition = f"r.{right_matching_col}_skip {address_condition}"
+        left_extra_col = f", {left_matching_col}_skip"
+        right_extra_col = f", {right_matching_col}_skip"
     else:
         left_address_condition = "TRUE"
         right_address_condition = "TRUE"
+        left_extra_col = ""
+        right_extra_col = ""
 
     temp_table = match_name_col + "_table"
 
@@ -76,36 +83,27 @@ def execute_match(
             CREATE SCHEMA IF NOT EXISTS link;
 
             CREATE OR REPLACE TABLE link.{temp_table} AS
-
-            WITH lhs AS (
-                SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
-                        {left_matching_id}
+            SELECT l.{left_entity}_{left_ent_id_edit},
+                   r.{right_entity}_{right_ent_id_edit},
+                   1 AS {match_name_col}
+            FROM
+                (SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
+                        {left_matching_id} {left_extra_col}
                 FROM {left_entity}.{left_table}
-                WHERE {left_matching_id} IS NOT NULL
-                AND {left_address_condition}
-                )
-
-            , rhs AS (
-                SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
-                        {right_matching_id}
+                ) as l
+            JOIN
+                (SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
+                        {right_matching_id} {right_extra_col}
                 FROM {right_entity}.{right_table}
-                WHERE {right_matching_id} IS NOT NULL
+                ) as r
+                ON l.{left_matching_id} = r.{right_matching_id}
+                AND l.{left_matching_id} IS NOT NULL
+                AND r.{right_matching_id} IS NOT NULL
+                AND l.{left_entity}_{left_ent_id_edit} {matching_condition} r.{right_entity}_{right_ent_id_edit}
+            WHERE
+                {left_address_condition}
                 AND {right_address_condition}
-                )
-
-            , final as (
-
-            SELECT DISTINCT lhs.{left_entity}_{left_ent_id_edit},
-                            rhs.{right_entity}_{right_ent_id_edit},
-                            1 AS {match_name_col}
-            FROM lhs
-            INNER JOIN rhs
-            ON lhs.{left_matching_id} = rhs.{right_matching_id}
-            )
-
-            SELECT *
-            from final
-            WHERE {left_entity}_{left_ent_id_edit} {matching_condition} {right_entity}_{right_ent_id_edit};"""
+        ;"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
         db_conn.execute(matching_query)
@@ -120,6 +118,7 @@ def execute_match(
             match_name_col=match_name_col,
             id_col_2=f"{right_entity}_{right_ent_id_edit}",
         )
+        logger.debug(f"Finished match processing for {match_name_col}")
 
     return None
 
@@ -156,7 +155,8 @@ def execute_match_address(
         link_exclusions = []
 
     ## Match by raw address string and by street id
-    for match in ["address", "street"]:
+    for match in ["street", "address"]:
+        logger.debug(f"Executing {match} match")
         execute_match(
             db_path=db_path,
             match_type=f"{match}_match",
@@ -177,10 +177,13 @@ def execute_match_address(
     ## If street id matches, match by unit
     left_side = f"{left_entity}_{left_table}_{left_address}"
     right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        street_match_to_check = f"{left_side}_{right_side}_street_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            street_match_to_check = f"{left_side}_{right_side}_street_match"
+        else:
+            street_match_to_check = f"{right_side}_{left_side}_street_match"
     else:
-        street_match_to_check = f"{right_side}_{left_side}_street_match"
+        street_match_to_check = f"{left_side}_{right_side}_street_match"
 
     execute_match_unit(
         db_path=db_path,
@@ -188,20 +191,6 @@ def execute_match_address(
         right_entity=right_entity,
         # TODO will ording of left and right address mess things up
         street_match_to_check=street_match_to_check,
-        left_table=left_table,
-        left_address=left_address,
-        left_ent_id=left_ent_id,
-        right_table=right_table,
-        right_address=right_address,
-        right_ent_id=right_ent_id,
-        skip_address=skip_address,
-        link_exclusions=link_exclusions,
-    )
-    ## match street name and number if zipcode matches
-    execute_match_street_name_and_num(
-        db_path=db_path,
-        left_entity=left_entity,
-        right_entity=right_entity,
         left_table=left_table,
         left_address=left_address,
         left_ent_id=left_ent_id,
@@ -246,6 +235,16 @@ def execute_match_processing(
 
     # set null matches to 0
     db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = 0 WHERE {match_name_col} IS NULL")
+
+    cols = [row[1] for row in db_conn.execute(f"PRAGMA table_info('{link_table}')").fetchall()]
+    for col in cols:
+        db_conn.execute(f"UPDATE {link_table} SET {col} = 0 WHERE {col} IS NULL")
+
+    # set datatype to int or float as expected
+    if "fuzzy" in match_name_col:
+        db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = CAST({match_name_col} AS FLOAT)")
+    else:
+        db_conn.execute(f"UPDATE {link_table} SET {match_name_col} = CAST({match_name_col} AS INT1)")
 
     # drop temp table of matches
     db_conn.execute(f"DROP TABLE link.{out_temp_table_name}")
@@ -318,11 +317,13 @@ def execute_match_unit(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_address}"
     right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_unit_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name_col = f"{left_side}_{right_side}_unit_match"
+        else:
+            match_name_col = f"{right_side}_{left_side}_unit_match"
     else:
-        match_name_col = f"{right_side}_{left_side}_unit_match"
-
+        match_name_col = f"{left_side}_{right_side}_unit_match"
     # check link exclusion
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
@@ -392,125 +393,13 @@ def execute_match_unit(
     return None
 
 
-def execute_match_street_name_and_num(
-    db_path: str | Path,
-    left_entity: str,
-    left_table: str,
-    left_address: str,
-    left_ent_id: str,
-    right_entity: str,
-    right_table: str,
-    right_address: str,
-    right_ent_id: str,
-    skip_address: bool = False,
-    link_exclusions: Optional[list] = None,
-) -> None:
-    """
-    Match street name and number if zipcode matches.
-
-    Creates a match column called
-    {left_entity}_{left_table}_{left_address}_{right_entity}_{right_table}_{right_address}_street_num_match
-    and appends to link table link.{left_entity}_{right_entity}
-    """
-    if link_exclusions is None:
-        link_exclusions = []
-
-    # if two different ids just dont want duplicates
-    matching_condition = "!="
-
-    if left_ent_id == right_ent_id and left_entity == right_entity:
-        left_ent_id_edit = f"{left_ent_id}_1"
-        right_ent_id_edit = f"{right_ent_id}_2"
-        # if same id, only want one direction of matches
-        matching_condition = "<"
-    else:
-        left_ent_id_edit = left_ent_id
-        right_ent_id_edit = right_ent_id
-
-    link_table = f"link.{left_entity}_{right_entity}"
-    # align the names of the match columns
-    left_side = f"{left_entity}_{left_table}_{left_address}"
-    right_side = f"{right_entity}_{right_table}_{right_address}"
-    if left_side < right_side:
-        match_name_col = f"{left_side}_{right_side}_street_num_match"
-    else:
-        match_name_col = f"{right_side}_{left_side}_street_num_match"
-
-    # check link exclusion
-    if any(exclusion in match_name_col for exclusion in link_exclusions):
-        return None
-
-    if skip_address:
-        address_condition = " != 1"
-        left_address_condition = f"{left_address}_skip {address_condition}"
-        right_address_condition = f"{right_address}_skip {address_condition}"
-    else:
-        left_address_condition = "TRUE"
-        right_address_condition = "TRUE"
-
-    temp_table = match_name_col + "_table"
-
-    matching_query = f"""CREATE OR REPLACE TABLE link.{temp_table} AS
-
-            with lhs as (
-                SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
-                        {left_address}_postal_code,
-                        {left_address}_address_number,
-                        {left_address}_street_name_id
-                FROM {left_entity}.{left_table}
-                WHERE {left_address}_address_number IS NOT NULL
-                AND {left_address}_street_name_id IS NOT NULL
-                and {left_address_condition}
-            )
-
-            , rhs as (
-                SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
-                        {right_address}_postal_code,
-                        {right_address}_address_number,
-                        {right_address}_street_name_id
-                FROM {right_entity}.{right_table}
-                WHERE {right_address}_address_number IS NOT NULL
-                AND {right_address}_street_name_id IS NOT NULL
-                and {right_address_condition}
-            )
-
-            ,final as (
-            SELECT DISTINCT lhs.{left_entity}_{left_ent_id_edit},
-                            rhs.{right_entity}_{right_ent_id_edit},
-                            1 AS {match_name_col}
-            FROM lhs
-            INNER JOIN rhs
-            on lhs.{left_address}_postal_code = rhs.{right_address}_postal_code
-            and lhs.{left_address}_address_number = rhs.{right_address}_address_number
-            and lhs.{left_address}_street_name_id = rhs.{right_address}_street_name_id
-            )
-
-            SELECT *
-            from final
-            WHERE {left_entity}_{left_ent_id_edit} {matching_condition} {right_entity}_{right_ent_id_edit};"""
-
-    with duckdb.connect(database=db_path, read_only=False) as db_conn:
-        db_conn.execute(matching_query)
-        console.log(f"[yellow] Created {match_name_col}")
-        logger.debug(f"Created {match_name_col}")
-
-        execute_match_processing(
-            db_conn=db_conn,
-            link_table=link_table,
-            out_temp_table_name=temp_table,
-            id_col_1=f"{left_entity}_{left_ent_id_edit}",
-            match_name_col=match_name_col,
-            id_col_2=f"{right_entity}_{right_ent_id_edit}",
-        )
-
-    return None
-
-
 # FUZZY MATCHING UTILS
 
 
 def generate_tfidf_links(
-    db_path: str | Path, table_location: str = "entity.name_similarity", source_table_name: str | None = None
+    db_path: str | Path,
+    table_location: str = "entity.name_similarity",
+    source_table_name: str | None = None,
 ) -> None:
     """
     create a table of tfidf matches between two entities and adds to db
@@ -571,10 +460,13 @@ def execute_fuzzy_link(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_name_col}"
     right_side = f"{right_entity}_{right_table}_{right_name_col}"
-    if left_side < right_side:
-        match_name = f"{left_side}_{right_side}_fuzzy_match"
+    if left_entity != right_entity:
+        if left_side < right_side:
+            match_name = f"{left_side}_{right_side}_fuzzy_match"
+        else:
+            match_name = f"{right_side}_{left_side}_fuzzy_match"
     else:
-        match_name = f"{right_side}_{left_side}_fuzzy_match"
+        match_name = f"{left_side}_{right_side}_fuzzy_match"
 
     # check link exclusion
     if any(exclusion in match_name for exclusion in link_exclusions):
@@ -659,9 +551,15 @@ def execute_fuzzy_link(
         db_conn.execute(query)
         console.log(f"[yellow] Created {match_name}")
         logger.debug(f"Created {match_name}")
+        cols = [row[1] for row in db_conn.execute(f"PRAGMA table_info('{link_table}')").fetchall()]
+        for col in cols:
+            db_conn.execute(f"UPDATE {link_table} SET {col} = 0 WHERE {col} IS NULL")
 
-        # fill in zeros
-        db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
+        # set datatype to int or float as expected
+        if "fuzzy" in match_name:
+            db_conn.execute(f"UPDATE {link_table} SET {match_name} = CAST({match_name} AS FLOAT)")
+        else:
+            db_conn.execute(f"UPDATE {link_table} SET {match_name} = CAST({match_name} AS INT1)")
 
     return None
 
@@ -837,9 +735,15 @@ def execute_address_fuzzy_link(
             db_conn.execute(query)
             console.log(f"[yellow] Created {match_name}")
             logger.debug(f"Created {match_name}")
+            cols = [row[1] for row in db_conn.execute(f"PRAGMA table_info('{link_table}')").fetchall()]
+            for col in cols:
+                db_conn.execute(f"UPDATE {link_table} SET {col} = 0 WHERE {col} IS NULL")
 
-            # fill in zeros
-            db_conn.execute(f"UPDATE {link_table} SET {match_name} = 0 WHERE {match_name} IS NULL")
+            # set datatype to int or float as expected
+            if "fuzzy" in match_name:
+                db_conn.execute(f"UPDATE {link_table} SET {match_name} = CAST({match_name} AS FLOAT)")
+            else:
+                db_conn.execute(f"UPDATE {link_table} SET {match_name} = CAST({match_name} AS INT1)")
 
     return None
 
@@ -860,12 +764,14 @@ def generate_combos_within_across_tables(name_idx: list, address_idx: Optional[l
     across_name_combos: list = []
     for i, j in across_combos_name_idx:
         across_name_combos += itertools.product(name_idx[i], name_idx[j])
+        across_name_combos += itertools.product(name_idx[j], name_idx[i])
 
     if len(address_idx) > 0:
         across_address_combos: list = []
         across_combos_address_idx = list(itertools.combinations(range(len(address_idx)), 2))
         for i, j in across_combos_address_idx:
             across_address_combos += itertools.product(address_idx[i], address_idx[j])
+            across_address_combos += itertools.product(address_idx[j], address_idx[i])
 
         return across_name_combos, across_address_combos
 

@@ -1,6 +1,6 @@
 [project]
 name = "chainlink"
-version = "0.0.3"
+version = "0.0.4"
 description = "A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques."
 authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart@uchicago.edu" }]
 readme = "README.md"
@@ -31,7 +31,7 @@ dependencies = [
     "sqlalchemy-mate<=2.0.0.0",
     "typer>=0.15.2",
     "us>=3.2.0",
-    "usaddress>=0.5.11",
+    "usaddress==0.5.11",
     "usaddress-scourgify>=0.6.0",
     "uszipcode>=1.0.1",
 ]

@@ -61,7 +61,7 @@ def validate_config(config: dict) -> bool:
                 "type": "object",
                 "required": ["db_path"],
                 "properties": {
-                    "force_db_create": {"type": "boolean"},
+                    "overwrite_db": {"type": "boolean"},
                     "export_tables": {"type": "boolean"},
                     "update_config_only": {"type": "boolean"},
                     "link_exclusions": {"type": ["array", "null"]},  # or none
@@ -106,8 +106,19 @@ def validate_config(config: dict) -> bool:
     except jsonschema.exceptions.ValidationError as e:
         console.print(f"[bold red]> Invalid configuration: {e!s}")
         return False
-    else:  # no exception
-        return True
+
+    # ids across tables but within schema should be the same
+    for schema in config["schemas"]:
+        ids = set()
+        for table in schema["tables"]:
+            ids.add(table["id_col"])
+
+        if len(ids) != 1:
+            console.print(f"[bold red]> All tables in schema {schema['schema_name']} must have the same id column")
+            return False
+
+    # no exception
+    return True
 
 
 def update_config(db_path: str | Path, config: dict, config_path: str | Path) -> None:
@@ -150,21 +161,22 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
         if row["schema"] == "link" or row["name"] == "name_similarity":
             return row["column_names"][:2]
         elif row["schema"] == "entity":
-            return row["column_names"][1]
+            return [row["column_names"][1]]
         else:
-            return row["column_names"][0]
+            return [row["column_names"][0]]
 
     with duckdb.connect(db_path) as conn:
-        df_db_columns = conn.sql("show all tables").df()
+        df_db_columns = conn.sql("show all tables").pl()
 
-        df_db_columns["schema_table"] = df_db_columns["schema"] + "." + df_db_columns["name"]
-        df_db_columns["id_col"] = df_db_columns.apply(lambda x: find_id_cols(x), axis=1)
-
-        link_filter = (df_db_columns["schema"] == "link") | (df_db_columns["name"] == "name_similarity")
+        df_db_columns = df_db_columns.with_columns(
+            schema_table=pl.col("schema") + "." + pl.col("name"),
+            id_col=pl.struct(pl.all()).map_elements(lambda x: find_id_cols(x), return_dtype=pl.List(pl.String)),
+        )
+        link_filter = (pl.col("schema") == "link") | (pl.col("name") == "name_similarity")
 
         links_to_export = zip(
-            df_db_columns[link_filter]["schema_table"].tolist(),
-            df_db_columns[link_filter]["id_col"].tolist(),
+            df_db_columns.filter(link_filter)["schema_table"].to_list(),
+            df_db_columns.filter(link_filter)["id_col"].to_list(),
         )
 
         for link in links_to_export:
@@ -175,19 +187,20 @@ def export_tables(db_path: str | Path, data_path: str | Path) -> None:
             d = conn.execute(links_query).pl().cast({link[1][0]: pl.String, link[1][1]: pl.String})
             d.write_parquet(f"{data_path}/{link[0].replace('.', '_')}.parquet")
 
-        main_filter = (df_db_columns["schema"] != "link") & (df_db_columns["name"] != "name_similarity")
+        main_filter = (pl.col("schema") != "link") & (pl.col("name") != "name_similarity")
+        print(main_filter)
         main_to_export = zip(
-            df_db_columns[main_filter]["schema_table"].tolist(),
-            df_db_columns[main_filter]["id_col"].tolist(),
+            df_db_columns.filter(main_filter)["schema_table"].to_list(),
+            df_db_columns.filter(main_filter)["id_col"].to_list(),
         )
 
-        for table in main_to_export:
+        for table, id_cols in main_to_export:
             sql_to_exec = f"""
-                (select * from {table[0]}
-                order by {table[1]} ASC);
+                (select * from {table}
+                order by {id_cols[0]} ASC);
             """
-            d = conn.execute(sql_to_exec).pl().cast({table[1]: pl.String})
-            d.write_parquet(f"{data_path}/{table[0].replace('.', '_')}.parquet")
+            d = conn.execute(sql_to_exec).pl().cast({id_cols[0]: pl.String})
+            d.write_parquet(f"{data_path}/{table.replace('.', '_')}.parquet")
 
     print("Exported all tables!")
     logger.info("Exported all tables!")
@@ -240,7 +253,7 @@ def create_config() -> dict:
     else:
         config = {
             "options": {
-                "force_db_create": False,
+                "overwrite_db": False,
                 "export_tables": False,
                 "update_config_only": False,
                 "link_exclusions": [],
@@ -252,24 +265,34 @@ def create_config() -> dict:
         }
         # build config with user input
         config["options"]["db_path"] = Prompt.ask(
-            "[green]> Enter the path to the resulting database", default="db/linked.db", show_default=True
+            "[green]> Enter the path to the resulting database",
+            default="db/linked.db",
+            show_default=True,
         )
 
         config["options"]["load_only"] = Confirm.ask(
-            "[green]> Only clean and load data to the database (without matching)?", show_default=True, default=False
+            "[green]> Only clean and load data to the database (without matching)?",
+            show_default=True,
+            default=False,
         )
 
         if not config["options"]["load_only"]:
             config["options"]["probablistic"] = Confirm.ask(
-                "[green]> Run probabilisitic name and address matching?", show_default=True, default=False
+                "[green]> Run probabilisitic name and address matching?",
+                show_default=True,
+                default=False,
             )
 
         config["options"]["export_tables"] = Confirm.ask(
-            "[green]> Export tables to parquet after load?", show_default=True, default=False
+            "[green]> Export tables to parquet after load?",
+            show_default=True,
+            default=False,
         )
 
         bad_address_path = Prompt.ask(
-            "[dim green]> [Optional] Provide path to bad address csv file", default="", show_default=False
+            "[dim green]> [Optional] Provide path to bad address csv file",
+            default="",
+            show_default=False,
         )
         bad_address_path = bad_address_path.strip()
         if bad_address_path:
@@ -297,7 +320,11 @@ def add_schema_config(config: dict) -> dict:
     add_table = Confirm.ask("[green]> Add a table to this schema?", default=True, show_default=True)
     while add_table:
         config = add_table_config(config, schema_name)
-        add_table = Confirm.ask("[green]> Add another table to this schema?", default=False, show_default=True)
+        add_table = Confirm.ask(
+            "[green]> Add another table to this schema?",
+            default=False,
+            show_default=True,
+        )
     console.print("[green italic]> Schema added successfully!")
     return config
 
@@ -312,12 +339,10 @@ def add_table_config(config: dict, schema_name: str) -> dict:
     table_name_path = Prompt.ask("[green]> Enter the path to the dataset")
     while not os.path.exists(table_name_path):
         table_name_path = Prompt.ask("[red]> Path does not exist. Please enter a valid path")
-    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique", default="id", show_default=True)
-    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)", default="name", show_default=True)
+    id_col = Prompt.ask("[green]> Enter the id column of the dataset. Must be unique")
+    name_col_str = Prompt.ask("[green]> Enter the name column(s) (comma separated)")
     name_cols = [_.strip() for _ in name_col_str.split(",")]
-    address_col_str = Prompt.ask(
-        "[green]> Enter the address column(s) (comma separated)", default="address", show_default=True
-    )
+    address_col_str = Prompt.ask("[green]> Enter the address column(s) (comma separated)")
     address_cols = [_.strip() for _ in address_col_str.split(",")]
 
     for idx, schema in enumerate(config["schemas"]):

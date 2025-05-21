@@ -117,7 +117,7 @@ options:
   bad_address_path: data/bad_addresses.csv
   db_path: db/linked_full.db
   export_tables: false
-  force_db_create: true
+  overwrite_db: true
   link_exclusions:
   - parcel_parcel_property_address_parcel_parcel_property_address_street_fuzzy_match
   - parcel_parcel_mailing_address_parcel_parcel_property_address_street_fuzzy_match
