@@ -25,16 +25,14 @@ The system is designed to be configurable through YAML files and supports increm
 
 ## Installation
 
+Package is available on PyPI. You can install it using pip or uv:
+
 ```bash
-# Clone the repository
-git clone https://github.com/mansueto-institute/chainlink.git
-cd chainlink
+pip install chainlink
 ```
 
-[Install uv](https://docs.astral.sh/uv/getting-started/installation/), then run the following command to install the dependencies.
-
 ```bash
-make install
+uv add chainlink
 ```
 
 ## Usage
