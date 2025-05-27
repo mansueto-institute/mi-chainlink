@@ -28,11 +28,11 @@ The system is designed to be configurable through YAML files and supports increm
 Package is available on PyPI. You can install it using pip or uv:
 
 ```bash
-pip install chainlink
+pip install mi-chainlink
 ```
 
 ```bash
-uv add chainlink
+uv add mi-chainlink
 ```
 
 ## Usage
