@@ -61,6 +61,7 @@ def test_clean_address_correct_address():
         "postal_code": "60615",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "123EHYDEPARKBLVDAPT15CHICAGOIL60615",
     }
 
 
@@ -79,6 +80,7 @@ def test_clean_address_empty():
         "postal_code": None,
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": None,
     }
 
 
@@ -97,6 +99,7 @@ def test_clean_address_zipcode_mismatch():
         "postal_code": "60615",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "123EHYDEPARKBLVD15WHOEVILLEGRINCHTOWN60615",
     }
     assert clean_address("123 E Hyde Park Blvd #15 Chicago, IL 12345") == {
         "raw": "123 E Hyde Park Blvd #15 Chicago, IL 12345",
@@ -112,6 +115,7 @@ def test_clean_address_zipcode_mismatch():
         "postal_code": "12345",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "123EHYDEPARKBLVD15CHICAGOIL12345",
     }
 
 
@@ -130,6 +134,7 @@ def test_clean_address_missing_parts():
         "postal_code": "60615",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "123EHYDEPARKBLVD15WHOEVILLEGRINCHTOWN60615",
     }
 
     assert clean_address("123 E Hyde Park Blvd # 15") == {
@@ -146,6 +151,7 @@ def test_clean_address_missing_parts():
         "postal_code": None,
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "123EHYDEPARKBLVD15",
     }
 
     assert clean_address("CHICAGO, IL 60615") == {
@@ -162,6 +168,7 @@ def test_clean_address_missing_parts():
         "postal_code": "60615",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "CHICAGOIL60615",
     }
 
 
@@ -180,6 +187,7 @@ def test_clean_address_irregular():
         "postal_code": "15219",
         "subaddress_identifier": "44TH",
         "subaddress_type": "FL",
+        "address_norm": "USSTEELTWR600GRANT44THFLPITTSBURGHPA15219",
     }
     assert clean_address("2851 JOHN STREET, SUITE ONE MARKHAM, ONTARIO AO L3R 5") == {
         "raw": "2851 JOHN STREET, SUITE ONE MARKHAM, ONTARIO AO L3R 5",
@@ -195,6 +203,7 @@ def test_clean_address_irregular():
         "postal_code": None,
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "2851JOHNSTREETSUITEONEMARKHAMONTARIOAOL3R5",
     }
     assert clean_address("POB 362 CLAY CITY IL 62824") == {
         "raw": "POB 362 CLAY CITY IL 62824",
@@ -210,6 +219,7 @@ def test_clean_address_irregular():
         "postal_code": "62824",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "POB362CLAYCITYIL62824",
     }
     assert clean_address("1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154") == {
         "raw": "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154",
@@ -225,6 +235,7 @@ def test_clean_address_irregular():
         "postal_code": "60154",
         "subaddress_identifier": None,
         "subaddress_type": None,
+        "address_norm": "1WESTBROOKCORPORATECENTERSUITE300WESTCHESTERIL60154",
     }
 
 

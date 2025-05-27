@@ -260,7 +260,7 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
                 link_exclusions=link_exclusions,
             )
 
-        address_combos = list(itertools.combinations_with_replacement(table["address_cols"], 2))
+        address_combos = list(itertools.product(table["address_cols"], repeat=2))
         for left_address, right_address in address_combos:
             execute_address_fuzzy_link(
                 db_path=db_path,

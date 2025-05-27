@@ -198,6 +198,7 @@ def clean_address(raw: str) -> dict:
             "state": None,
             "postal_code": None,
             "street": None,
+            "address_norm": None,
         }
 
     FIELD_NAMES = [
@@ -255,6 +256,7 @@ def clean_address(raw: str) -> dict:
         "city": tags.get("PlaceName"),
         "state": tags.get("StateName"),
         "postal_code": tags.get("ZipCode"),
+        "address_norm": str(re.sub(r"[^a-zA-Z0-9]+", "", raw).upper()),
     }
 
     if record["city"] is not None:

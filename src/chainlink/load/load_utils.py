@@ -85,7 +85,7 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
             console.log(f"[yellow] Cleaning address column {col}")
 
             df = df.with_columns(
-                pl.col(col).fill_null("").alias(raw_address),
+                pl.col(col).fill_null("").str.to_uppercase().alias(raw_address),
                 pl.col(col).fill_null("").str.to_uppercase().alias(temp_address),
             )
             df = df.with_columns(
@@ -105,6 +105,7 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
                         pl.Field("state", pl.Utf8),
                         pl.Field("postal_code", pl.Utf8),
                         pl.Field("street", pl.Utf8),
+                        pl.Field("address_norm", pl.Utf8),
                     ]),
                 )
             )
@@ -116,8 +117,9 @@ def clean_generic(df: pl.DataFrame, config: dict) -> pl.DataFrame:
                 .unnest(temp_address)
                 .with_columns(
                     pl.col(f"{col}_postal_code").cast(pl.String).map_elements(clean_zipcode, return_dtype=pl.String),
-                    pl.col(raw_address).alias(col + "_address"),
+                    pl.col(f"{col}_address_norm").cast(pl.String).alias(col + "_address"),
                 )
+                .with_columns(pl.col(col + "_address").replace("", None))
             )
 
             id_cols = ["address", "street", "street_name"]

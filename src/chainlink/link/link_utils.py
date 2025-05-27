@@ -589,7 +589,10 @@ def execute_address_fuzzy_link(
     # align the names of the match columns
     left_side = f"{left_entity}_{left_table}_{left_address_col}"
     right_side = f"{right_entity}_{right_table}_{right_address_col}"
-    match_name_stem = f"{left_side}_{right_side}" if left_side < right_side else f"{right_side}_{left_side}"
+    if left_entity != right_entity:
+        match_name_stem = f"{left_side}_{right_side}" if left_side < right_side else f"{right_side}_{left_side}"
+    else:
+        match_name_stem = f"{left_side}_{right_side}"
 
     same_condition = "TRUE"
 
