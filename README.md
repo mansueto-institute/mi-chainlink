@@ -1,15 +1,15 @@
-# chainlink
+# mi-chainlink
 
 A powerful, flexible framework for entity resolution and record linkage using DuckDB as the database engine built upon the work of [Who Owns Chicago](https://github.com/mansueto-institute/who-owns-chi/) by the [Mansueto Institute for Urban Innovation](https://miurban.uchicago.edu/) including the work of [Kevin Bryson](https://github.com/cmdkev), [Ana (Anita) Restrepo Lachman](https://github.com/anitarestrepo16), [Caitlin P.](https://github.com/CaitlinCP), [Joaquin Pinto](https://github.com/joaquinpinto), and [Divij Sinha](https://github.com/divij-sinha). 
 
 
 This package enables you to load data from various sources, clean and standardize entity names and addresses, and create links between entities based on exact and fuzzy matching techniques.
 
-Source: https://github.com/mansueto-institute/chainlink
+Source: https://github.com/mansueto-institute/mi-chainlink
 
 Documentation: TK
 
-Issues: https://github.com/mansueto-institute/chainlink/issues
+Issues: https://github.com/mansueto-institute/mi-chainlink/issues
 
 ## Overview
 
