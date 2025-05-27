@@ -2,7 +2,7 @@
 name = "mi-chainlink"
 version = "0.0.7"
 description = "A flexible record linkage framework that enables matching between multiple datasets using both exact and fuzzy matching techniques."
-authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart@uchicago.edu" }]
+authors = [{ name = "Mansueto Institute,Austin Steinhart", email = "asteinhart3@gmail.com" }]
 readme = "README.md"
 keywords = ['python']
 requires-python = ">=3.10,<4.0"
@@ -37,9 +37,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://asteinhart.github.io/chainlink/"
-Repository = "https://github.com/mansueto-institute/chainlink"
-Documentation = "https://asteinhart.github.io/chainlink/"
+Homepage = "https://mansueto-institute.github.io/mi-chainlink/"
+Repository = "https://github.com/mansueto-institute/mi-chainlink"
+Documentation = "https://mansueto-institute.github.io/mi-chainlink/"
 
 [dependency-groups]
 dev = [
