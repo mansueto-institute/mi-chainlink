@@ -5,11 +5,11 @@ A powerful, flexible framework for entity resolution and record linkage using Du
 
 This package enables you to load data from various sources, clean and standardize entity names and addresses, and create links between entities based on exact and fuzzy matching techniques.
 
-Source: https://github.com/mansueto-institute/mi-chainlink
+Source: [https://github.com/mansueto-institute/mi-chainlink](https://github.com/mansueto-institute/mi-chainlink)
 
-Documentation: TK
+Documentation: [https://mansueto-institute.github.io/mi-chainlink/](https://mansueto-institute.github.io/mi-chainlink/)
 
-Issues: https://github.com/mansueto-institute/mi-chainlink/issues
+Issues: [https://github.com/mansueto-institute/mi-chainlink/issues](https://github.com/mansueto-institute/mi-chainlink/issues)
 
 ## Overview
 
