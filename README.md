@@ -47,9 +47,8 @@ chainlink
 chainlink path/to/config.yaml
 ```
 
+### Python Interface
 ```python
-# run as a python function
-
 from chainlink import chainlink
 
 chainlink(
