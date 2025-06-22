@@ -29,7 +29,7 @@ state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
 
 
-def predict_org(name: str) -> int:
+def predict_org(name: str) -> bool:
     """
     Given a string, predict whether or not the string is an organization name.
 
