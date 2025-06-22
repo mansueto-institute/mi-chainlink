@@ -50,14 +50,14 @@ def predict_org(name: str) -> int:
         or re.search(WORD_PATTERNS, name)
         or re.search(EOL_PATTERNS, name)
     ):
-        return 1
+        return True
 
     # Doing this because GX PROPERTY OWNER LLC exists
     if re.search(individual_names, name):
-        return 0
+        return False
 
     else:
-        return 0
+        return False
 
 
 def clean_zipcode(raw: str | int) -> str:

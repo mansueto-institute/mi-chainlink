@@ -9,13 +9,13 @@ from chainlink.cleaning.cleaning_functions import (
 
 ############################## test functions
 def test_predict_org():
-    assert predict_org("OLIMP FLOORING INC.") == 1
-    assert predict_org("718 MULFORD AVENUE CONDOMINIUM ASSOCIATION") == 1
-    assert predict_org("TAXPAYER OF") == 0
-    assert predict_org("Joe DiMaggio") == 0
-    assert predict_org("ELLI D COSKY TRUST") == 1
-    assert predict_org("D & L HALFMAN") == 0
-    assert predict_org("D & L HALFMAN INC.") == 1
+    assert predict_org("OLIMP FLOORING INC.")
+    assert predict_org("718 MULFORD AVENUE CONDOMINIUM ASSOCIATION")
+    assert predict_org("TAXPAYER OF") is False
+    assert predict_org("Joe DiMaggio") is False
+    assert predict_org("ELLI D COSKY TRUST")
+    assert predict_org("D & L HALFMAN") is False
+    assert predict_org("D & L HALFMAN INC.")
 
 
 def test_clean_zipcode():
@@ -221,7 +221,9 @@ def test_clean_address_irregular():
         "subaddress_type": None,
         "address_norm": "POB362CLAYCITYIL62824",
     }
-    assert clean_address("1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154") == {
+    assert clean_address(
+        "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154"
+    ) == {
         "raw": "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154",
         "street": None,
         "address_number": None,
@@ -256,7 +258,9 @@ def test_clean_names_punct():
     assert clean_names("Mr. & Mrs. J. Schuman") == "MR AND MRS J SCHUMAN"
     assert clean_names("CRAFTN' WIT FASHN' L.L.C.") == "CRAFTN WIT FASHN LLC"
     assert clean_names("M&M ROMEOVILLE, LLC") == "MANDM ROMEOVILLE LLC"
-    assert clean_names("TOM'S QUALITY AUTO REPAIR, INC.") == "TOMS QUALITY AUTO REPAIR INC"
+    assert (
+        clean_names("TOM'S QUALITY AUTO REPAIR, INC.") == "TOMS QUALITY AUTO REPAIR INC"
+    )
 
 
 def test_clean_names_spaces():
