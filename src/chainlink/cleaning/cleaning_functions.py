@@ -112,13 +112,7 @@ def identify_state_city(zipcode: str) -> tuple:
             return (zip_city, zip_state)
 
     # Handle cases where zip code is null or not a number
-    except AttributeError:
-        return (None, None)
-
-    except TypeError:
-        return (None, None)
-
-    except ValueError:
+    except (AttributeError, TypeError, ValueError) as e:
         return (None, None)
 
 
@@ -166,7 +160,9 @@ def clean_address_batch_parser(df_batch: pl.Series) -> pl.Series:
     )
 
     # 5) Re-attach the original address for the join key
-    parsed_struct = parsed_df.select(pl.struct(pl.all()).alias("address_struct")).to_series(0)
+    parsed_struct = parsed_df.select(
+        pl.struct(pl.all()).alias("address_struct")
+    ).to_series(0)
 
     return parsed_struct
 
@@ -224,7 +220,9 @@ def clean_address(raw: str) -> dict:
 
     try:
         normalized = normalize_address_record(to_normalize)
-        normalized = " ".join(value for value in normalized.values() if value is not None)
+        normalized = " ".join(
+            value for value in normalized.values() if value is not None
+        )
 
     except Exception:
         normalized = to_normalize
@@ -296,9 +294,13 @@ def clean_address(raw: str) -> dict:
         "street_name",
         "street_post_type",
     ]
-    record["street"] = " ".join([
-        record[field] for field in street_fields if (record[field] is not None) and (record[field] != "")
-    ])
+    record["street"] = " ".join(
+        [
+            record[field]
+            for field in street_fields
+            if (record[field] is not None) and (record[field] != "")
+        ]
+    )
     if (record["street"] == "") or (record["street"] == " "):
         record["street"] = None
 
@@ -350,7 +352,9 @@ def clean_names(raw: str) -> str | None:
 
     name = raw.upper()
 
-    name = name.replace("&", "AND").replace("-", " ").replace("@", "AT").replace("—", " ")
+    name = (
+        name.replace("&", "AND").replace("-", " ").replace("@", "AT").replace("—", " ")
+    )
 
     name = re.sub(r"[^a-zA-Z0-9\s]", "", name)
     name = re.sub(r"\s{2,}", " ", name)
@@ -358,4 +362,3 @@ def clean_names(raw: str) -> str | None:
         return None
     else:
         return name
-    return name
