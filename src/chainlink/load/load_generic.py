@@ -35,18 +35,14 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             logger.info(f"Data: {table_config['table_name']} -- Reading data")
             file_path = table_config.get("table_name_path")
             if not file_path:
-                raise ValueError(
-                    f"No file path provided for table: {table_config['table_name']}"
-                )
+                raise ValueError(f"No file path provided for table: {table_config['table_name']}")
 
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Data file not found: {file_path}")
 
             file_extension = file_path.split(".")[-1].lower()
             if file_extension not in ["csv", "parquet"]:
-                raise ValueError(
-                    f"Unsupported file format: {file_extension}. Supported formats: csv, parquet"
-                )
+                raise ValueError(f"Unsupported file format: {file_extension}. Supported formats: csv, parquet")
 
             try:
                 df = (
@@ -64,9 +60,7 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             validate_input_data(df, table_config)
 
             # Clean the data and create ids
-            console.log(
-                f"""[yellow] Data: {table_config["table_name"]} -- Starting cleaning"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Starting cleaning""")
             logger.info(f"""Data: {table_config["table_name"]} -- Starting cleaning""")
 
             all_columns = []
@@ -83,9 +77,7 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             df = clean_generic(df, table_config)
 
             # load the data to db
-            console.log(
-                f"""[yellow] Data: {table_config["table_name"]} -- Starting load"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Starting load""")
 
             table_name = table_config["table_name"]
             load_to_db(
@@ -96,21 +88,14 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             )
 
             # add new names to entity_names table
-            console.log(
-                f"""[yellow] Data: {table_config["table_name"]} -- Updating entity name tables"""
-            )
-            logger.info(
-                f"""Data: {table_config["table_name"]} -- Updating entity name tables"""
-            )
+            console.log(f"""[yellow] Data: {table_config["table_name"]} -- Updating entity name tables""")
+            logger.info(f"""Data: {table_config["table_name"]} -- Updating entity name tables""")
 
             all_id_cols = ["name_id", "address_id", "street_id", "street_name_id"]
 
             id_cols = []
             for col in df.columns:
-                if (
-                    any(c in col for c in all_id_cols)
-                    and "subaddress_identifier" not in col
-                ):
+                if any(c in col for c in all_id_cols) and "subaddress_identifier" not in col:
                     id_cols.append(col)
 
             for col in id_cols:

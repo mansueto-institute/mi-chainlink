@@ -221,9 +221,7 @@ def test_clean_address_irregular():
         "subaddress_type": None,
         "address_norm": "POB362CLAYCITYIL62824",
     }
-    assert clean_address(
-        "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154"
-    ) == {
+    assert clean_address("1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154") == {
         "raw": "1 WESTBROOK CORPORATE CENTER, SUITE #300 WESTCHESTER IL 60154",
         "street": None,
         "address_number": None,
@@ -258,9 +256,7 @@ def test_clean_names_punct():
     assert clean_names("Mr. & Mrs. J. Schuman") == "MR AND MRS J SCHUMAN"
     assert clean_names("CRAFTN' WIT FASHN' L.L.C.") == "CRAFTN WIT FASHN LLC"
     assert clean_names("M&M ROMEOVILLE, LLC") == "MANDM ROMEOVILLE LLC"
-    assert (
-        clean_names("TOM'S QUALITY AUTO REPAIR, INC.") == "TOMS QUALITY AUTO REPAIR INC"
-    )
+    assert clean_names("TOM'S QUALITY AUTO REPAIR, INC.") == "TOMS QUALITY AUTO REPAIR INC"
 
 
 def test_clean_names_spaces():
