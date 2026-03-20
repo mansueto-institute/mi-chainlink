@@ -8,8 +8,12 @@ import sparse_dot_topn as ct
 from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+MATCH_THRESHOLD = 0.5
 
-def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> pl.DataFrame:
+
+def superfast_tfidf(
+    entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity"
+) -> pl.DataFrame:
     """
     returns sorted list of top matched names
     """
@@ -19,18 +23,37 @@ def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_c
     entity_list = entity_list.filter(~pl.col(entity_col).is_null())
     company_names = entity_list.select(entity_col).to_series()
     if len(company_names) < 2:
-        matches_df = pl.DataFrame(data={"entity_a": [], "entity_b": [], "similarity": [], "id_a": [], "id_b": []})
+        matches_df = pl.DataFrame(
+            data={
+                "entity_a": [],
+                "entity_b": [],
+                "similarity": [],
+                "id_a": [],
+                "id_b": [],
+            }
+        )
         return matches_df
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names.to_numpy())
-    matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
-    matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names.to_numpy())
+    matches = ct.sp_matmul_topn(
+        tf_idf_matrix,
+        tf_idf_matrix.transpose(),
+        50,
+        MATCH_THRESHOLD,
+        sort=True,
+        n_threads=-1,
+    )
+    matches_df = get_matches_df(
+        sparse_matrix=matches, name_vector=company_names.to_numpy()
+    )
     matches_df = clean_matches(matches_df)
 
     return matches_df
 
 
-def get_matches_df(sparse_matrix: csr_matrix, name_vector: np.ndarray, top: None = None) -> pl.DataFrame:
+def get_matches_df(
+    sparse_matrix: csr_matrix, name_vector: np.ndarray, top: None = None
+) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -77,7 +100,9 @@ def clean_matches(matches_df: pl.DataFrame) -> pl.DataFrame:
     # remove self matches, duplicates and sort
     matches_df = (
         matches_df.filter(pl.col("id_a") != pl.col("id_b"))
-        .with_columns(pl.concat_list(pl.col("id_a", "id_b")).list.sort().alias("sorted_id_pairs"))
+        .with_columns(
+            pl.concat_list(pl.col("id_a", "id_b")).list.sort().alias("sorted_id_pairs")
+        )
         .unique("sorted_id_pairs")
         .drop("sorted_id_pairs")
         .sort("similarity", descending=True)
@@ -105,41 +130,53 @@ blank_words = {
 
 # replace with shortened versions
 ngram_adj = {
-    frozenset({
-        "DEVELOPMENT",
-        "DEVELOPMENTS",
-        "DVLPMNT",
-        "DEVLPMNT",
-        "DEVELOPMEN",
-        "DEVELOPMNT",
-    }): "DEV",
+    frozenset(
+        {
+            "DEVELOPMENT",
+            "DEVELOPMENTS",
+            "DVLPMNT",
+            "DEVLPMNT",
+            "DEVELOPMEN",
+            "DEVELOPMNT",
+        }
+    ): "DEV",
     frozenset({"ESTATE", "ESTATES", "ESATE", "ESTAT"}): "EST",
     frozenset({"HOUSING", "HOUSNG", "HOUSIN", "HOUISING", "HOUISNG"}): "HSNG",
-    frozenset({
-        "MANAGEMENT",
-        "MANAGEMEN",
-        "MANAGMENT",
-        "MANGAMENT",
-        "MANGAEMENT",
-        "MANAG",
-        "MGMNT",
-        "MNGMT",
-    }): "MGMT",
-    frozenset({
-        "PROPERTY",
-        "PROPERTIES",
-        "PROPRETY",
-        "PROPRETIES",
-        "PROPERT",
-        "PROPERTI",
-        "PROPERTIE",
-        "PROPS",
-    }): "PROP",
-    frozenset({"REALTY", "REALTIES", "RELATY", "RELATIES", "REALT", "REALTEIS", "RE", "REL"}): "RLTY",
+    frozenset(
+        {
+            "MANAGEMENT",
+            "MANAGEMEN",
+            "MANAGMENT",
+            "MANGAMENT",
+            "MANGAEMENT",
+            "MANAG",
+            "MGMNT",
+            "MNGMT",
+        }
+    ): "MGMT",
+    frozenset(
+        {
+            "PROPERTY",
+            "PROPERTIES",
+            "PROPRETY",
+            "PROPRETIES",
+            "PROPERT",
+            "PROPERTI",
+            "PROPERTIE",
+            "PROPS",
+        }
+    ): "PROP",
+    frozenset(
+        {"REALTY", "REALTIES", "RELATY", "RELATIES", "REALT", "REALTEIS", "RE", "REL"}
+    ): "RLTY",
 }
 
 # Flatten ngram_adj for easier replacement
-flat_ngram_adj = {word: replacement for synonyms, replacement in ngram_adj.items() for word in synonyms}
+flat_ngram_adj = {
+    word: replacement
+    for synonyms, replacement in ngram_adj.items()
+    for word in synonyms
+}
 
 
 def adjust_and_replace(string: str) -> str:
@@ -154,7 +191,12 @@ def adjust_and_replace(string: str) -> str:
     parts = string.split()
 
     # replace words based on blank_words and flat_ngram_adj using list comprehension
-    adjusted_string = "".join(["" if part in blank_words else flat_ngram_adj.get(part, part) for part in parts])
+    adjusted_string = "".join(
+        [
+            "" if part in blank_words else flat_ngram_adj.get(part, part)
+            for part in parts
+        ]
+    )
 
     return adjusted_string.strip()
 
@@ -168,7 +210,9 @@ def ngrams(string: str, n: int = 3) -> list:
     return ["".join(ngram) for ngram in ngrams]
 
 
-def database_query(db_path: str | Path, table_name: str | None = None, limit: int | None = None) -> pl.DataFrame:
+def database_query(
+    db_path: str | Path, table_name: str | None = None, limit: int | None = None
+) -> pl.DataFrame:
     """
     queries entities for comparison
     """
