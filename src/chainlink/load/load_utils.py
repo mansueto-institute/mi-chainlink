@@ -206,31 +206,30 @@ def update_entity_ids(df: pl.DataFrame, entity_id_col: str, db_conn: DuckDBPyCon
     return None
 
 
-def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list) -> None:
+def execute_bad_flag(db_conn: DuckDBPyConnection, table: str, col: str, bad_list: list) -> None:
     """
-    Flags rows with bad addresses as provided by user
+    Flags rows with bad values as provided by user
     """
-    console.log(f"[yellow] Flagging bad addresses in {table} table for {address_col} column")
-    if bad_addresses:
-        bad_addresses_tuple = tuple(bad_addresses)
+    console.log(f"[yellow] Flagging bad values in {table} table for {col} column")
+    if bad_list:
+        bad_values_tuple = tuple(bad_list)
 
         query = f"""
                 CREATE OR REPLACE TABLE {table} AS
                 SELECT *,
                         CASE WHEN
-                            ({address_col} in {bad_addresses_tuple}
-                            OR {address_col}_street in {bad_addresses_tuple}) THEN 1
-                        ELSE 0 END as {address_col}_skip
+                            ({col} in {bad_values_tuple}) THEN 1
+                        ELSE 0 END as {col}_skip
                 from {table}
                 """
 
     else:
         query = f"""
             CREATE OR REPLACE TABLE {table} AS
-            SELECT *, 0 as {address_col}_skip
+            SELECT *, 0 as {col}_skip
             from {table}
             """
-        console.log(f"[yellow] No bad addresses to flag in {table} table for {address_col} column")
+        console.log(f"[yellow] No bad values to flag in {table} table for {col} column")
 
     db_conn.execute(query)
     return None

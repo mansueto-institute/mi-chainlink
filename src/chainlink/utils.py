@@ -65,7 +65,10 @@ def validate_config(config: dict) -> bool:
                     "export_tables": {"type": "boolean"},
                     "update_config_only": {"type": "boolean"},
                     "link_exclusions": {"type": ["array", "null"]},  # or none
+                    "name_match_score_threshold": {"type": "number"},
+                    "address_match_score_threshold": {"type": "number"},
                     "bad_address_path": {"type": "string"},  # or none
+                    "bad_name_path": {"type": "string"},  # or none
                 },
             },
             "schemas": {

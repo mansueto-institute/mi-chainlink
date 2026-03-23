@@ -400,6 +400,7 @@ def generate_tfidf_links(
     db_path: str | Path,
     table_location: str = "entity.name_similarity",
     source_table_name: str | None = None,
+    match_score_threshold: float | None = None,
 ) -> None:
     """
     create a table of tfidf matches between two entities and adds to db
@@ -418,7 +419,7 @@ def generate_tfidf_links(
     # returns a pandas df
     entity_col = entity_list.columns[0]
     id_col = entity_list.columns[1]
-    matches_df = superfast_tfidf(entity_list, id_col, entity_col)
+    matches_df = superfast_tfidf(entity_list, id_col, entity_col, match_score_threshold)
 
     console.log("[yellow] Fuzzy Matching done")
     logger.info("Fuzzy Matching done")

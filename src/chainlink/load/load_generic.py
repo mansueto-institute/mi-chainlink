@@ -6,7 +6,7 @@ import polars as pl
 
 from chainlink.load.load_utils import (
     clean_generic,
-    execute_flag_bad_addresses,
+    execute_bad_flag,
     load_to_db,
     update_entity_ids,
     validate_input_data,
@@ -14,7 +14,7 @@ from chainlink.load.load_utils import (
 from chainlink.utils import console, logger
 
 
-def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) -> None:
+def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list, bad_names: list) -> None:
     """
     Loads a generic file into the database.
 
@@ -103,11 +103,20 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list) 
             # create bad address flag
             if table_config.get("address_cols"):
                 for col in table_config["address_cols"]:
-                    execute_flag_bad_addresses(
+                    execute_bad_flag(
                         db_conn=conn,
                         table=f"{schema_name}.{table_name}",
-                        address_col=col,
-                        bad_addresses=bad_addresses,
+                        col=col,
+                        bad_list=bad_addresses,
+                    )
+
+            if table_config.get("name_cols"):
+                for col in table_config["name_cols"]:
+                    execute_bad_flag(
+                        db_conn=conn,
+                        table=f"{schema_name}.{table_name}",
+                        col=col,
+                        bad_list=bad_names,
                     )
 
 

@@ -46,6 +46,9 @@ def chainlink(
     load_only = config["options"].get("load_only", False)
     db_path = config["options"].get("db_path", DIR / "db/linked.db")
 
+    name_match_score_threshold = config["options"].get("name_match_score_threshold", 0.8)
+    address_match_score_threshold = config["options"].get("address_match_score_threshold", 0.5)
+
     no_names = True
     no_addresses = True
 
@@ -82,6 +85,8 @@ def chainlink(
         return True
 
     bad_address_path = config["options"].get("bad_address_path", None)
+    bad_name_path = config["options"].get("bad_name_path", None)
+
     if bad_address_path is not None:
         try:
             bad_addresses_df = pl.read_csv(bad_address_path)
@@ -90,6 +95,15 @@ def chainlink(
             bad_addresses = []
     else:
         bad_addresses = []
+
+    if bad_name_path is not None:
+        try:
+            bad_names_df = pl.read_csv(bad_name_path)
+            bad_names = bad_names_df[:, 0].to_list()
+        except Exception:
+            bad_names = []
+    else:
+        bad_names = []
 
     # list of link exclusions
 
@@ -125,6 +139,7 @@ def chainlink(
                 db_path=db_path,
                 schema_config=schema_config,
                 bad_addresses=bad_addresses,
+                bad_names=bad_names,
             )
 
         if not load_only:
@@ -142,12 +157,17 @@ def chainlink(
         if len(new_schemas) > 0:
             with console.status("[bold yellow] Working on fuzzy matching scores") as status:
                 if not no_names:
-                    generate_tfidf_links(db_path, table_location="entity.name_similarity")
+                    generate_tfidf_links(
+                        db_path,
+                        table_location="entity.name_similarity",
+                        match_score_threshold=name_match_score_threshold,
+                    )
                 if not no_addresses:
                     generate_tfidf_links(
                         db_path,
                         table_location="entity.street_name_similarity",
                         source_table_name="entity.street_name",
+                        match_score_threshold=address_match_score_threshold,
                     )
 
         # for across link

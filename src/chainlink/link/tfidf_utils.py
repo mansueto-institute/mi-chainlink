@@ -9,7 +9,9 @@ from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity") -> pl.DataFrame:
+def superfast_tfidf(
+    entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity", match_score_threshold: float = 0.8
+) -> pl.DataFrame:
     """
     returns sorted list of top matched names
     """
@@ -23,7 +25,9 @@ def superfast_tfidf(entity_list: pl.DataFrame, id_col: str = "name_id", entity_c
         return matches_df
     vectorizer = TfidfVectorizer(min_df=1, analyzer=ngrams)
     tf_idf_matrix = vectorizer.fit_transform(company_names.to_numpy())
-    matches = ct.sp_matmul_topn(tf_idf_matrix, tf_idf_matrix.transpose(), 50, 0.8, sort=True, n_threads=-1)
+    matches = ct.sp_matmul_topn(
+        tf_idf_matrix, tf_idf_matrix.transpose(), 50, match_score_threshold, sort=True, n_threads=-1
+    )
     matches_df = get_matches_df(sparse_matrix=matches, name_vector=company_names.to_numpy())
     matches_df = clean_matches(matches_df)
 
