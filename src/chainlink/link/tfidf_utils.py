@@ -10,7 +10,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def superfast_tfidf(
-    entity_list: pl.DataFrame, id_col: str = "name_id", entity_col: str = "entity", match_score_threshold: float = 0.8
+    entity_list: pl.DataFrame,
+    id_col: str = "name_id",
+    entity_col: str = "entity",
+    match_score_threshold: float | None = 0.8,
 ) -> pl.DataFrame:
     """
     returns sorted list of top matched names
