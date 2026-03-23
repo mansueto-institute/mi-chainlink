@@ -55,6 +55,10 @@ def chainlink(
     # create snake case columns
     for schema in config["schemas"]:
         for table in schema["tables"]:
+            if table["address_cols"] is None:
+                table["address_cols"] = []
+            if table["name_cols"] is None:
+                table["name_cols"] = []
             if len(table["name_cols"]) > 0:
                 no_names = False
                 table["name_cols_og"] = table["name_cols"]
