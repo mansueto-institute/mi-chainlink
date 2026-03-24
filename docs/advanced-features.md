@@ -12,7 +12,7 @@ options:
 
 You can exclude specific types of links from being created in the database. This is useful for filtering out certain types of matches that may not be relevant to your analysis. Include the link types you want to exclude in the configuration file.
 
-```yaml:
+```yaml
 options:
   link_exclusions:
   - exclude_link_1
@@ -24,8 +24,7 @@ options:
 
 The framework supports incremental updates to an existing database. Change `overwrite_db` option to `false` in the configuration file. This allows you to add new data to the database without overwriting existing data.
 
-```yaml:
-
+```yaml
 options:
   overwrite_db: false
   ...

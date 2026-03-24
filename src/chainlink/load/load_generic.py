@@ -54,7 +54,8 @@ def load_generic(db_path: str | Path, schema_config: dict, bad_addresses: list, 
                 df = df.cast(pl.String)
 
             except Exception as e:
-                raise Exception(f"Error reading file {file_path}: {e!s}") from None
+                logger.error(f"Error reading file {file_path}: {e}")
+                raise
 
             validate_input_data(df, table_config)
 

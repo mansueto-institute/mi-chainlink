@@ -9,13 +9,13 @@ from chainlink.cleaning.cleaning_functions import (
 
 ############################## test functions
 def test_predict_org():
-    assert predict_org("OLIMP FLOORING INC.") == 1
-    assert predict_org("718 MULFORD AVENUE CONDOMINIUM ASSOCIATION") == 1
-    assert predict_org("TAXPAYER OF") == 0
-    assert predict_org("Joe DiMaggio") == 0
-    assert predict_org("ELLI D COSKY TRUST") == 1
-    assert predict_org("D & L HALFMAN") == 0
-    assert predict_org("D & L HALFMAN INC.") == 1
+    assert predict_org("OLIMP FLOORING INC.")
+    assert predict_org("718 MULFORD AVENUE CONDOMINIUM ASSOCIATION")
+    assert predict_org("TAXPAYER OF") is False
+    assert predict_org("Joe DiMaggio") is False
+    assert predict_org("ELLI D COSKY TRUST")
+    assert predict_org("D & L HALFMAN") is False
+    assert predict_org("D & L HALFMAN INC.")
 
 
 def test_clean_zipcode():

@@ -29,7 +29,7 @@ state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
 
 
-def predict_org(name: str) -> int:
+def predict_org(name: str) -> bool:
     """
     Given a string, predict whether or not the string is an organization name.
 
@@ -50,14 +50,14 @@ def predict_org(name: str) -> int:
         or re.search(WORD_PATTERNS, name)
         or re.search(EOL_PATTERNS, name)
     ):
-        return 1
+        return True
 
     # Doing this because GX PROPERTY OWNER LLC exists
     if re.search(individual_names, name):
-        return 0
+        return False
 
     else:
-        return 0
+        return False
 
 
 def clean_zipcode(raw: str | int) -> str:
@@ -112,13 +112,7 @@ def identify_state_city(zipcode: str) -> tuple:
             return (zip_city, zip_state)
 
     # Handle cases where zip code is null or not a number
-    except AttributeError:
-        return (None, None)
-
-    except TypeError:
-        return (None, None)
-
-    except ValueError:
+    except (AttributeError, TypeError, ValueError) as e:
         return (None, None)
 
 
@@ -358,4 +352,3 @@ def clean_names(raw: str) -> str | None:
         return None
     else:
         return name
-    return name
