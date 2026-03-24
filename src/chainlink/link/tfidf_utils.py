@@ -37,7 +37,7 @@ def superfast_tfidf(
     return matches_df
 
 
-def get_matches_df(sparse_matrix: csr_matrix, name_vector: np.ndarray, top: None = None) -> pl.DataFrame:
+def get_matches_df(sparse_matrix: csr_matrix, name_vector: np.ndarray) -> pl.DataFrame:
     """
     create a matches dataframe given matrix of ngrams
     references
@@ -45,26 +45,12 @@ def get_matches_df(sparse_matrix: csr_matrix, name_vector: np.ndarray, top: None
         name_vector - list of names to compare
         id_vector - id of distinct name from entities list
     """
-    non_zeros = sparse_matrix.nonzero()
-
-    sparserows = non_zeros[0]
-    sparsecols = non_zeros[1]
-
-    nr_matches = top if top else sparsecols.size
-
-    entity_a = np.empty([nr_matches], dtype=object)
-    entity_b = np.empty([nr_matches], dtype=object)
-    similarity = np.zeros(nr_matches)
-
-    for index in range(0, nr_matches):
-        entity_a[index] = name_vector[sparserows[index]]
-        entity_b[index] = name_vector[sparsecols[index]]
-        similarity[index] = sparse_matrix.data[index]
+    sparserows, sparsecols = sparse_matrix.nonzero()
 
     data = {
-        "entity_a": entity_a,
-        "entity_b": entity_b,
-        "similarity": similarity,
+        "entity_a": name_vector[sparserows],
+        "entity_b": name_vector[sparsecols],
+        "similarity": sparse_matrix.data,
     }
     df = pl.DataFrame(data).with_columns(
         pl.col("entity_a").hash().alias("id_a"), pl.col("entity_b").hash().alias("id_b")

@@ -28,7 +28,6 @@ def load_to_db(df: pl.DataFrame, table_name: str, db_conn: DuckDBPyConnection, s
     -------
     None
     """
-    df = df
     query = f"""
             CREATE SCHEMA IF NOT EXISTS {schema};
             DROP TABLE IF EXISTS {schema}.{table_name};

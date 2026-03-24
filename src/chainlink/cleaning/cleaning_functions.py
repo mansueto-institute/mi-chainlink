@@ -24,6 +24,7 @@ from chainlink.cleaning.patterns import (
 from chainlink.cleaning.usps_suffixes import suffixes
 
 zip_cache: dict[str, dict[str, str]] = {}
+_search_engine = SearchEngine()
 
 state_names = [s.name for s in us.states.STATES_AND_TERRITORIES]
 state_abbr = [s.abbr for s in us.states.STATES_AND_TERRITORIES]
@@ -52,12 +53,7 @@ def predict_org(name: str) -> int:
     ):
         return 1
 
-    # Doing this because GX PROPERTY OWNER LLC exists
-    if re.search(individual_names, name):
-        return 0
-
-    else:
-        return 0
+    return 0
 
 
 def clean_zipcode(raw: str | int) -> str:
@@ -99,8 +95,7 @@ def identify_state_city(zipcode: str) -> tuple:
             return (zip_city, zip_state)
 
         else:
-            engine = SearchEngine()
-            zipcode_obj = engine.by_zipcode(int(zipcode))
+            zipcode_obj = _search_engine.by_zipcode(int(zipcode))
             # zip_cache[zipcode] = zipcode
 
             zip_city = zipcode_obj.major_city.upper()
@@ -280,7 +275,7 @@ def clean_address(raw: str) -> dict:
             record["unit_number"] = None
 
     # Overwrite city and state using uszip if the parsed state is not valid
-    if record["state"] not in state_abbr or record["state"] is None:
+    if record["state"] is None or record["state"] not in state_abbr:
         zip_city, zip_state = identify_state_city(record["postal_code"])
 
         # if don't find valid city, state, leave original
@@ -306,14 +301,10 @@ def clean_address(raw: str) -> dict:
         record["street_post_type"] = suffixes.get(record["street_post_type"])
 
     for key, value in record.items():
-        record[key] = None if value == "" else value
-
-    for k, v in record.items():
-        if v is None:
-            continue
-        # Force everything to a Python string:
-        if not isinstance(v, str):
-            record[k] = str(v)
+        if value == "":
+            record[key] = None
+        elif value is not None and not isinstance(value, str):
+            record[key] = str(value)
 
     return record
 
@@ -356,6 +347,4 @@ def clean_names(raw: str) -> str | None:
     name = re.sub(r"\s{2,}", " ", name)
     if (name == "") or (name == " "):
         return None
-    else:
-        return name
     return name
