@@ -299,7 +299,9 @@ def create_config() -> dict:
         bad_address_path = bad_address_path.strip()
         if bad_address_path:
             while not os.path.exists(bad_address_path):
-                bad_address_path = Prompt.ask("[red]> Bad address path does not exist. Please enter a valid path or leave blank").strip()
+                bad_address_path = Prompt.ask(
+                    "[red]> Bad address path does not exist. Please enter a valid path or leave blank"
+                ).strip()
             config["options"]["bad_address_path"] = bad_address_path
 
         add_schema = Confirm.ask("[green]> Add a new schema?", default=True, show_default=True)
