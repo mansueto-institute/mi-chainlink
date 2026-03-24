@@ -45,10 +45,9 @@ CONFIG_SIMPLE_CREATE = {
         "update_config_only": False,
         "link_exclusions": [],
         "bad_address_path": None,
-        "probabilistic": False,
+        "probabilistic": True,
         "load_only": False,
         "db_path": "db/linked.db",
-        "probablistic": True,
     },
     "schemas": [
         {

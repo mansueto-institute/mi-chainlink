@@ -63,15 +63,11 @@ def chainlink(
                 no_names = False
                 table["name_cols_og"] = table["name_cols"]
                 table["name_cols"] = [x.lower().replace(" ", "_") for x in table["name_cols"]]
-            else:
-                table["name_cols"] = []
 
             if len(table["address_cols"]) > 0:
                 no_addresses = False
                 table["address_cols_og"] = table["address_cols"]
                 table["address_cols"] = [x.lower().replace(" ", "_") for x in table["address_cols"]]
-            else:
-                table["address_cols"] = []
 
             table["id_col_og"] = table["id_col"]
             table["id_col"] = table["id_col"].lower().replace(" ", "_")
@@ -88,26 +84,16 @@ def chainlink(
         update_config(db_path, config, config_path)
         return True
 
-    bad_address_path = config["options"].get("bad_address_path", None)
-    bad_name_path = config["options"].get("bad_name_path", None)
-
-    if bad_address_path is not None:
+    def _load_bad_list(path: str | None) -> list:
+        if path is None:
+            return []
         try:
-            bad_addresses_df = pl.read_csv(bad_address_path)
-            bad_addresses = bad_addresses_df[:, 0].to_list()
+            return pl.read_csv(path)[:, 0].to_list()
         except Exception:
-            bad_addresses = []
-    else:
-        bad_addresses = []
+            return []
 
-    if bad_name_path is not None:
-        try:
-            bad_names_df = pl.read_csv(bad_name_path)
-            bad_names = bad_names_df[:, 0].to_list()
-        except Exception:
-            bad_names = []
-    else:
-        bad_names = []
+    bad_addresses = _load_bad_list(config["options"].get("bad_address_path"))
+    bad_names = _load_bad_list(config["options"].get("bad_name_path"))
 
     # list of link exclusions
 
@@ -120,6 +106,7 @@ def chainlink(
         df_db_columns = con.sql("show all tables").pl()
 
     schemas = config["schemas"]
+    schemas_by_name = {s["schema_name"]: s for s in schemas}
     new_schemas = []
 
     # load each schema. if schema is a new entity, create links
@@ -135,7 +122,7 @@ def chainlink(
 
     # load in all new schemas
     for new_schema in new_schemas:
-        schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
+        schema_config = schemas_by_name[new_schema]
 
         with console.status(f"[bold yellow] Working on loading {new_schema}") as status:
             # load schema
@@ -180,7 +167,7 @@ def chainlink(
 
         # create tfidf links within each new schema
         for new_schema in new_schemas:
-            schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
+            schema_config = schemas_by_name[new_schema]
 
             if probabilistic:
                 with console.status(f"[bold yellow] Working on fuzzy matching links in {new_schema}") as status:
@@ -193,13 +180,11 @@ def chainlink(
             # also create across links for each new schema
             existing_schemas = [schema for schema in schemas if schema["schema_name"] != new_schema]
 
-            new_schema_config = [schema for schema in schemas if schema["schema_name"] == new_schema][0]
-
             # make sure we havent already created this link combo
             for schema in existing_schemas:
-                if sorted(new_schema + schema["schema_name"]) not in created_schemas:
-                    links.append((new_schema_config, schema))
-                    created_schemas.append(sorted(new_schema + schema["schema_name"]))
+                if sorted([new_schema, schema["schema_name"]]) not in created_schemas:
+                    links.append((schema_config, schema))
+                    created_schemas.append(sorted([new_schema, schema["schema_name"]]))
 
         # across links for each new_schema, link across to all existing entities
         for new_schema_config, existing_schema in links:

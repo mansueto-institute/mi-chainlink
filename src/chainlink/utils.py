@@ -248,8 +248,7 @@ def create_config() -> dict:
                 break
             else:  # invalid config
                 # print(validate_config(config))
-                create_config_path = Prompt.ask("[red]> Invalid config. Please enter a valid yaml config")
-                create_config_path = input().strip()
+                create_config_path = Prompt.ask("[red]> Invalid config. Please enter a valid yaml config").strip()
                 config = load_config(create_config_path)
 
         return config
@@ -280,7 +279,7 @@ def create_config() -> dict:
         )
 
         if not config["options"]["load_only"]:
-            config["options"]["probablistic"] = Confirm.ask(
+            config["options"]["probabilistic"] = Confirm.ask(
                 "[green]> Run probabilisitic name and address matching?",
                 show_default=True,
                 default=False,
@@ -300,8 +299,7 @@ def create_config() -> dict:
         bad_address_path = bad_address_path.strip()
         if bad_address_path:
             while not os.path.exists(bad_address_path):
-                console.print("> Bad address path does not exist. Please enter a valid path or leave blank:")
-                bad_address_path = input().strip()
+                bad_address_path = Prompt.ask("[red]> Bad address path does not exist. Please enter a valid path or leave blank").strip()
             config["options"]["bad_address_path"] = bad_address_path
 
         add_schema = Confirm.ask("[green]> Add a new schema?", default=True, show_default=True)
