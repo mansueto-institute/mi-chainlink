@@ -22,7 +22,7 @@ def execute_match(
     right_matching_col: str,
     right_matching_id: str,
     right_ent_id: str,
-    skip_address: bool = False,
+    skip_col: bool = True,
     link_exclusions: Optional[list] = None,
 ) -> None:
     """
@@ -65,15 +65,15 @@ def execute_match(
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
-    if skip_address:
-        address_condition = " != 1"
-        left_address_condition = f"l.{left_matching_col}_skip {address_condition}"
-        right_address_condition = f"r.{right_matching_col}_skip {address_condition}"
+    if skip_col:
+        col_condition = " != 1"
+        left_col_condition = f"l.{left_matching_col}_skip {col_condition}"
+        right_col_condition = f"r.{right_matching_col}_skip {col_condition}"
         left_extra_col = f", {left_matching_col}_skip"
         right_extra_col = f", {right_matching_col}_skip"
     else:
-        left_address_condition = "TRUE"
-        right_address_condition = "TRUE"
+        left_col_condition = "TRUE"
+        right_col_condition = "TRUE"
         left_extra_col = ""
         right_extra_col = ""
 
@@ -101,8 +101,8 @@ def execute_match(
                 AND r.{right_matching_id} IS NOT NULL
                 AND l.{left_entity}_{left_ent_id_edit} {matching_condition} r.{right_entity}_{right_ent_id_edit}
             WHERE
-                {left_address_condition}
-                AND {right_address_condition}
+                {left_col_condition}
+                AND {right_col_condition}
         ;"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
@@ -135,7 +135,7 @@ def execute_match_address(
     right_table: str,
     right_address: str,
     right_ent_id: str,
-    skip_address: bool = False,
+    skip_col: bool = True,
     link_exclusions: Optional[list] = None,
 ) -> None:
     """
@@ -172,7 +172,7 @@ def execute_match_address(
             right_matching_col=right_address,
             right_matching_id=f"{right_address}_{match}_id",
             right_ent_id=right_ent_id,
-            skip_address=skip_address,
+            skip_col=skip_col,
             link_exclusions=link_exclusions,
         )
 
@@ -199,7 +199,7 @@ def execute_match_address(
         right_table=right_table,
         right_address=right_address,
         right_ent_id=right_ent_id,
-        skip_address=skip_address,
+        skip_col=skip_col,
         link_exclusions=link_exclusions,
     )
 
@@ -293,7 +293,7 @@ def execute_match_unit(
     right_table: str,
     right_address: str,
     right_ent_id: str,
-    skip_address: bool = False,
+    skip_col: bool = True,
     link_exclusions: Optional[list] = None,
 ) -> None:
     """
@@ -330,13 +330,13 @@ def execute_match_unit(
     if any(exclusion in match_name_col for exclusion in link_exclusions):
         return None
 
-    if skip_address:
-        address_condition = " != 1"
-        left_address_condition = f"{left_address}_skip {address_condition}"
-        right_address_condition = f"{right_address}_skip {address_condition}"
+    if skip_col:
+        col_condition = " != 1"
+        left_col_condition = f"{left_address}_skip {col_condition}"
+        right_col_condition = f"{right_address}_skip {col_condition}"
     else:
-        left_address_condition = "TRUE"
-        right_address_condition = "TRUE"
+        left_col_condition = "TRUE"
+        right_col_condition = "TRUE"
 
     temp_table = match_name_col + "_table"
 
@@ -355,7 +355,7 @@ def execute_match_unit(
             SELECT {left_ent_id} AS {left_entity}_{left_ent_id_edit},
                     {left_address}_unit_number AS unit_1
             FROM {left_entity}.{left_table}
-            where {left_address_condition}
+            where {left_col_condition}
 
             )
 
@@ -363,7 +363,7 @@ def execute_match_unit(
             SELECT {right_ent_id} AS {right_entity}_{right_ent_id_edit},
                     {right_address}_unit_number AS unit_2
             FROM {right_entity}.{right_table}
-            where {right_address_condition}
+            where {right_col_condition}
             )
 
         SELECT {left_entity}_{left_ent_id_edit},
@@ -404,6 +404,7 @@ def generate_tfidf_links(
     db_path: str | Path,
     table_location: str = "entity.name_similarity",
     source_table_name: str | None = None,
+    match_score_threshold: float | None = None,
 ) -> None:
     """
     create a table of tfidf matches between two entities and adds to db
@@ -422,7 +423,7 @@ def generate_tfidf_links(
     # returns a pandas df
     entity_col = entity_list.columns[0]
     id_col = entity_list.columns[1]
-    matches_df = superfast_tfidf(entity_list, id_col, entity_col)
+    matches_df = superfast_tfidf(entity_list, id_col, entity_col, match_score_threshold)
 
     console.log("[yellow] Fuzzy Matching done")
     logger.info("Fuzzy Matching done")
@@ -579,7 +580,7 @@ def execute_address_fuzzy_link(
     right_ent_id: str,
     right_address_col: str,
     tfidf_table: str = "link.tfidf_staging",
-    skip_address: bool = False,
+    skip_col: bool = True,
     link_exclusions: Optional[list] = None,
 ) -> None:
     """
@@ -625,13 +626,13 @@ def execute_address_fuzzy_link(
         left_directional_rename = f"{left_address_col}_street_pre_directional"
         right_directional_rename = f"{right_address_col}_street_pre_directional"
 
-    if skip_address:
-        address_condition = " != 1"
-        left_address_condition = f"{left_address_col}_skip {address_condition}"
-        right_address_condition = f"{right_address_col}_skip {address_condition}"
+    if skip_col:
+        col_condition = " != 1"
+        left_col_condition = f"{left_address_col}_skip {col_condition}"
+        right_col_condition = f"{right_address_col}_skip {col_condition}"
     else:
-        left_address_condition = "TRUE"
-        right_address_condition = "TRUE"
+        left_col_condition = "TRUE"
+        right_col_condition = "TRUE"
 
     match_names = [
         f"{match_name_stem}_street_fuzzy_match",
@@ -670,7 +671,7 @@ def execute_address_fuzzy_link(
                     {left_address_col}_address_number as {left_entity}_{left_address_num_rename},
                     {left_address_col}_postal_code as {left_entity}_{left_postal_code_rename}
             FROM {left_entity}.{left_table}
-            WHERE {left_address_condition}
+            WHERE {left_col_condition}
         ),
 
         right_source AS (
@@ -681,7 +682,7 @@ def execute_address_fuzzy_link(
                     {right_address_col}_address_number as {right_entity}_{right_address_num_rename},
                     {right_address_col}_postal_code as {right_entity}_{right_postal_code_rename}
             FROM {right_entity}.{right_table}
-            WHERE {right_address_condition}
+            WHERE {right_col_condition}
         ),
 
         fuzzy_match_1 AS (

@@ -72,7 +72,7 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
                     right_table=table,
                     right_address=right_address,
                     right_ent_id=table_config["id_col"],
-                    skip_address=True,
+                    skip_col=True,
                     link_exclusions=link_exclusions,
                 )
 
@@ -128,7 +128,7 @@ def create_within_links(db_path: str | Path, schema_config: dict, link_exclusion
             right_table=right_table,
             right_address=right_address,
             right_ent_id=right_ent_id,
-            skip_address=True,
+            skip_col=True,
             link_exclusions=link_exclusions,
         )
 
@@ -223,7 +223,7 @@ def create_across_links(db_path: str | Path, new_schema: dict, existing_schema: 
             right_table=right_table,
             right_address=right_address,
             right_ent_id=right_ent_id,
-            skip_address=True,
+            skip_col=True,
             link_exclusions=link_exclusions,
         )
 
@@ -273,7 +273,7 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
                 right_ent_id=table["id_col"],
                 right_address_col=right_address,
                 tfidf_table="entity.street_name_similarity",
-                skip_address=True,
+                skip_col=True,
                 link_exclusions=link_exclusions,
             )
 
@@ -322,7 +322,7 @@ def create_tfidf_within_links(db_path: str | Path, schema_config: dict, link_exc
             right_ent_id=right_ent_id,
             right_address_col=right_address,
             tfidf_table="entity.street_name_similarity",
-            skip_address=True,
+            skip_col=True,
             link_exclusions=link_exclusions,
         )
 
@@ -407,7 +407,7 @@ def create_tfidf_across_links(
             right_ent_id=right_ent_id,
             right_address_col=right_address,
             tfidf_table="entity.street_name_similarity",
-            skip_address=True,
+            skip_col=True,
             link_exclusions=link_exclusions,
         )
 

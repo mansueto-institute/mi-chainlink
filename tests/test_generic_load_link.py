@@ -58,6 +58,17 @@ CONFIG_SIMPLE = {
     "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
 }
 
+CONFIG_BAD = {
+    "options": {
+        "db_path": "tests/db/test_bad.db",
+        "overwrite_db": True,
+        "probabilistic": True,
+        "bad_name_path": "tests/data/bad_names.csv",
+    },
+    "schemas": [CONFIG_SIMPLE_1, CONFIG_SIMPLE_2],
+}
+
+
 CONFIG_SIMPLE_CROSS_SCHEMA = {
     "schema_name": "test_simple1",
     "tables": [
@@ -218,6 +229,29 @@ def make_simple_db():
         config_path="tests/configs/config_simple.yaml",
     )
 
+
+@pytest.fixture
+def make_simple_db_bad_names():
+    if os.path.exists("tests/db/test_bad.db"):
+        os.remove("tests/db/test_bad.db")
+
+    pl.DataFrame({
+        "id": ["1", "2", "3", "4"],
+        "name": ["CHICAGO TITLE LAND TRU", "CHICAGO TITLE LAND TRU", "Cool Cool", "Cool Cool"],
+        "address": ["1", "2", "3", "4"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test1.csv")
+    pl.DataFrame({
+        "id": ["5", "6", "7", "8"],
+        "name": ["Aus St", "Erie Erie", "Cool Cool", "Good Doom"],
+        "address": ["5", "6", "3", "4"],
+        "skip_address": [0, 0, 0, 0],
+    }).write_csv("tests/data/test2.csv")
+
+    chainlink(
+        CONFIG_BAD,
+        config_path="tests/configs/config_bad.yaml",
+    )
 
 @pytest.fixture
 def make_simple_cross_db():
@@ -486,6 +520,14 @@ def make_multiple_tables_db():
         CONFIG_MULTIPLE_TABLES,
         config_path="tests/configs/config_multiple_tables.yaml",
     )
+
+def test_bad_names(make_simple_db_bad_names):
+    with duckdb.connect("tests/db/test_bad.db", read_only=True) as db_conn:
+        query = "SELECT * FROM link.test_simple1_test_simple1"
+        df = db_conn.execute(query).pl()
+        assert df.shape[0] == 1
+        assert df.select(pl.col("test_simple1_id_1") == "3").item()
+        assert df.select(pl.col("test_simple1_id_2") == "4").item()
 
 
 def test_simple_exact_within(make_simple_db):

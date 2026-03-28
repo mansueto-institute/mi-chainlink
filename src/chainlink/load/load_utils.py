@@ -146,10 +146,9 @@ def create_id_col(df: pl.DataFrame, col: str) -> pl.DataFrame:
     df = df.with_columns(pl.col(col).hash().alias(col_id)).with_columns(
         pl.when(pl.col(col).is_null()).then(None).otherwise(pl.col(col_id)).alias(col_id).cast(pl.UInt64),
     )
-    ## hacky id removal for bad_names
-    bad_names = pl.read_csv("/Users/Shared/Mansueto/projects/linkage/src/chainlink/bad_names.csv")["bad_names"].to_list()
+
     df = df.with_columns(
-        pl.when(pl.col(col).is_in(bad_names) | pl.col(col).is_null()| (pl.col(col) == ""))
+        pl.when(pl.col(col).is_null()| (pl.col(col) == ""))
         .then(None)
         .otherwise(pl.col(col_id))
         .alias(col_id).cast(pl.UInt64),
@@ -215,34 +214,38 @@ def update_entity_ids(df: pl.DataFrame, entity_id_col: str, db_conn: DuckDBPyCon
     return None
 
 
-def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_col: str, bad_addresses: list) -> None:
+def execute_bad_flag(db_conn: DuckDBPyConnection, table: str, col: str, bad_list: list, address: bool) -> None:
     """
-    Flags rows with bad addresses as provided by user
+    Flags rows with bad values as provided by user
     """
-    console.log(f"[yellow] Flagging bad addresses in {table} table for {address_col} column")
-    if bad_addresses:
-        bad_addresses_tuple = tuple(bad_addresses)
+    console.log(f"[yellow] Flagging bad values in {table} table for {col} column")
+    if bad_list:
+        bad_values_tuple = tuple(bad_list)
 
-        query = f"""
+        query_first = f"""
                 CREATE OR REPLACE TABLE {table} AS
                 SELECT *,
                         CASE WHEN
-                            ({address_col} in {bad_addresses_tuple}
-                            OR {address_col}_street in {bad_addresses_tuple}
-                            OR {address_col} = ''
-                            OR {address_col}_street = '') THEN 1
-                        ELSE 0 END as {address_col}_skip
+                            ({col} in {bad_values_tuple}
+                            OR {col} = ''
+        """
+        query_mid = f"""OR {col}_street in {bad_values_tuple}
+                    OR {col}_street in {bad_values_tuple}"""
+        query_last = f""") THEN 1
+                        ELSE 0 END as {col}_skip
                 from {table}
                 """
-
+        query = query_first + query_mid + query_last if address else query_first + query_last
     else:
         query = f"""
             CREATE OR REPLACE TABLE {table} AS
-            SELECT *, 0 as {address_col}_skip
+            SELECT *, 0 as {col}_skip
             from {table}
             """
-        console.log(f"[yellow] No bad addresses to flag in {table} table for {address_col} column")
+        console.log(f"[yellow] No bad values to flag in {table} table for {col} column")
 
+    console.log(f"[yellow] Executing query to flag bad values in {table} table for {col} column")
+    console.log(f"[yellow] Query: {query}")
     db_conn.execute(query)
     return None
 
