@@ -879,7 +879,7 @@ wheels = [
 
 [[package]]
 name = "mi-chainlink"
-version = "0.0.7"
+version = "0.0.10"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },

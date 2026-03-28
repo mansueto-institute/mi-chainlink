@@ -146,6 +146,15 @@ def create_id_col(df: pl.DataFrame, col: str) -> pl.DataFrame:
     df = df.with_columns(pl.col(col).hash().alias(col_id)).with_columns(
         pl.when(pl.col(col).is_null()).then(None).otherwise(pl.col(col_id)).alias(col_id).cast(pl.UInt64),
     )
+    ## hacky id removal for bad_names
+    bad_names = pl.read_csv("/Users/Shared/Mansueto/projects/linkage/src/chainlink/bad_names.csv")["bad_names"].to_list()
+    df = df.with_columns(
+        pl.when(pl.col(col).is_in(bad_names) | pl.col(col).is_null()| (pl.col(col) == ""))
+        .then(None)
+        .otherwise(pl.col(col_id))
+        .alias(col_id).cast(pl.UInt64),
+    )
+
 
     return df
 
@@ -219,7 +228,9 @@ def execute_flag_bad_addresses(db_conn: DuckDBPyConnection, table: str, address_
                 SELECT *,
                         CASE WHEN
                             ({address_col} in {bad_addresses_tuple}
-                            OR {address_col}_street in {bad_addresses_tuple}) THEN 1
+                            OR {address_col}_street in {bad_addresses_tuple}
+                            OR {address_col} = ''
+                            OR {address_col}_street = '') THEN 1
                         ELSE 0 END as {address_col}_skip
                 from {table}
                 """

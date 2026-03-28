@@ -106,6 +106,8 @@ def execute_match(
         ;"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
+        db_conn.execute("SET memory_limit='200GB'")
+        console.log(f"[yellow] Executing match query for {match_name_col}")
         db_conn.execute(matching_query)
         console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
@@ -377,6 +379,8 @@ def execute_match_unit(
         AND CAST(unit_1 AS VARCHAR) = CAST(unit_2 AS VARCHAR);"""
 
     with duckdb.connect(database=db_path, read_only=False) as db_conn:
+        db_conn.execute("SET memory_limit='200GB'")
+        console.log(f"[yellow] Executing match query for {match_name_col}")
         db_conn.execute(matching_query)
         console.log(f"[yellow] Created {match_name_col}")
         logger.debug(f"Created {match_name_col}")
