@@ -90,7 +90,6 @@ def chainlink(
 
     bad_address_path = config["options"].get("bad_address_path", None)
     bad_name_path = config["options"].get("bad_name_path", None)
-
     if bad_address_path is not None:
         try:
             bad_addresses_df = pl.read_csv(bad_address_path)
@@ -98,8 +97,10 @@ def chainlink(
             logger.info(f"Loaded bad addresses from {bad_address_path}")
         except Exception:
             bad_addresses = []
+            logger.info(f"Could not load bad addresses from {bad_address_path}, proceeding with empty list")
     else:
         bad_addresses = []
+        logger.info("No bad_address_path provided, proceeding with empty list of bad addresses")
 
     if bad_name_path is not None:
         try:
@@ -108,8 +109,10 @@ def chainlink(
             logger.info(f"Loaded bad names from {bad_name_path}")
         except Exception:
             bad_names = []
+            logger.info(f"Could not load bad names from {bad_name_path}, proceeding with empty list")
     else:
         bad_names = []
+        logger.info("No bad_name_path provided, proceeding with empty list of bad names")
 
     # list of link exclusions
 

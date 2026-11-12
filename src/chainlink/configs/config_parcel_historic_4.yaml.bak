@@ -1,0 +1,37 @@
+metadata:
+  existing_links:
+  - main_parcel_mailing_name_main_parcel_mailing_name_name_match
+  last_updated: '2025-05-28 20:05:50'
+options:
+  bad_address_path: data/bad_addresses.csv
+  db_path: db/linked_parcel_historic_2000.db
+  export_tables: false
+  force_db_create: true
+  link_exclusions:
+  - main_parcel_mailing_name_main_parcel_mailing_name_name_match
+  - main_parcel_mailing_name_main_parcel_mailing_name_fuzzy_match
+  - main_parcel_property_address_full_main_parcel_property_address_full_address_match
+  - main_parcel_property_address_full_main_parcel_property_address_full_street_match
+  - main_parcel_property_address_full_main_parcel_property_address_full_unit_match
+  - main_parcel_property_address_full_main_parcel_property_address_full_street_fuzzy_match
+  - main_parcel_property_address_full_main_parcel_property_address_full_unit_fuzzy_match
+  load_only: false
+  probabilistic: true
+  update_config_only: false
+schemas:
+- schema_name: main
+  tables:
+  - address_cols:
+    - property_address_full
+    - mailing_address_full
+    address_cols_og:
+    - property_address_full
+    - mailing_address_full
+    id_col: pin
+    id_col_og: pin
+    name_cols:
+    - mailing_name
+    name_cols_og:
+    - mailing_name
+    table_name: parcel
+    table_name_path: data/dfc_fulladd_2000.parquet
